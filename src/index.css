@@ -1,0 +1,223 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2E7D32;
+  --color-secondary: #4CAF50;
+  --color-accent: #FF9800;
+  --color-cream: #FAFAFA;
+  --color-dark: #1B1B1B;
+  --color-primary-dark: #1B5E20;
+  --color-primary-light: #4CAF50;
+  --color-accent-light: #FFB74D;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+
+  --shadow-soft: 0 4px 24px -4px rgba(27, 27, 27, 0.08);
+  --shadow-card: 0 8px 32px -8px rgba(46, 125, 50, 0.12);
+  --shadow-lift: 0 24px 48px -12px rgba(46, 125, 50, 0.18);
+  --shadow-cta: 0 12px 32px -8px rgba(46, 125, 50, 0.4);
+
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 2.5rem;
+}
+
+/* ---------- Base ---------- */
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-cream);
+  color: var(--color-dark);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+::selection {
+  background: rgba(46, 125, 50, 0.2);
+  color: var(--color-primary-dark);
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f2f5f2;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--color-primary), var(--color-primary-dark));
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-dark);
+}
+
+/* ---------- Utility classes ---------- */
+.font-serif-display {
+  font-family: var(--font-serif);
+}
+
+.text-gradient {
+  background: linear-gradient(120deg, var(--color-primary-dark) 0%, var(--color-primary) 45%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.green-blob {
+  background: radial-gradient(circle at 30% 30%, rgba(76, 175, 80, 0.28), rgba(46, 125, 50, 0.12) 60%, transparent 70%);
+}
+
+.orange-blob {
+  background: radial-gradient(circle at 60% 40%, rgba(255, 152, 0, 0.22), rgba(255, 152, 0, 0.06) 60%, transparent 70%);
+}
+
+.section-padding {
+  padding-top: clamp(5rem, 10vw, 9rem);
+  padding-bottom: clamp(5rem, 10vw, 9rem);
+}
+
+/* Grain texture overlay for organic feel */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Blurred ambient shapes */
+.ambient-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Marquee for trust strip */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+/* Bounce-slow for floating veg */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+.float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+@keyframes float-med {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+.float-med {
+  animation: float-med 5s ease-in-out infinite;
+}
+@keyframes float-fast {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(-4deg); }
+}
+.float-fast {
+  animation: float-fast 4s ease-in-out infinite;
+}
+
+/* Scooter wheel spin */
+@keyframes wheel-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.wheel-spin {
+  animation: wheel-spin 1.2s linear infinite;
+  transform-origin: center;
+}
+
+/* Scooter bounce */
+@keyframes scooter-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.scooter-bounce {
+  animation: scooter-bounce 1.4s ease-in-out infinite;
+}
+
+@keyframes drift-right {
+  from { transform: translateX(-10%); opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  to { transform: translateX(110%); opacity: 0; }
+}
+.drift-line {
+  animation: drift-right 3.4s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.pulse-ring {
+  animation: pulse-ring 2.4s ease-out infinite;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin-slow {
+  animation: spin-slow 18s linear infinite;
+}
+.spin-slow-reverse {
+  animation: spin-slow 22s linear infinite reverse;
+}
+
+/* Delayed animation helpers */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .float-slow, .float-med, .float-fast, .wheel-spin, .scooter-bounce,
+  .drift-line, .pulse-ring, .spin-slow, .spin-slow-reverse {
+    animation: none;
+  }
+}
