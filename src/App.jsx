@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation, Link } from 'react-router-dom'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Leaf } from 'lucide-react'
 import { CartProvider, ToastProvider, RecentProvider } from './context/CartContext'
@@ -26,6 +26,10 @@ import SettingsPage from './pages/account/SettingsPage'
 import CartPreview from './components/shop/CartPreview'
 import ToastContainer from './components/shop/ToastContainer'
 
+/* Admin section is lazy-loaded — pulls in recharts only when an admin visits */
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'))
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
+
 function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => { window.scrollTo(0, 0) }, [pathname])
@@ -45,6 +49,27 @@ function NotFound() {
         <Link to="/" className="mt-6 inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-sm shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all">
           Back to Home
         </Link>
+      </div>
+    </div>
+  )
+}
+
+function AdminLoader() {
+  return (
+    <div className="min-h-screen bg-[#F5F7F5] flex flex-col items-center justify-center gap-5">
+      <div className="relative">
+        <span className="absolute inset-0 rounded-3xl bg-primary/20 blur-xl animate-pulse" />
+        <motion.div
+          animate={{ rotate: [0, 180, 360] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
+          className="relative w-14 h-14 rounded-3xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lift"
+        >
+          <Leaf className="w-6 h-6 text-white" />
+        </motion.div>
+      </div>
+      <div className="text-center">
+        <p className="font-serif-display font-extrabold text-dark">D.R<span className="text-primary">.</span>STORES</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mt-1">Loading admin panel…</p>
       </div>
     </div>
   )
@@ -82,6 +107,27 @@ function App() {
                       <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
                       <Route path="/addresses" element={<ProtectedRoute><AddressesPage /></ProtectedRoute>} />
                       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                      {/* Admin (role-protected, lazy-loaded) */}
+                      <Route
+                        path="/admin"
+                        element={
+                          <ProtectedRoute role="admin">
+                            <Suspense fallback={<AdminLoader />}>
+                              <AdminLayout><AdminDashboardPage /></AdminLayout>
+                            </Suspense>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin/dashboard"
+                        element={
+                          <ProtectedRoute role="admin">
+                            <Suspense fallback={<AdminLoader />}>
+                              <AdminLayout><AdminDashboardPage /></AdminLayout>
+                            </Suspense>
+                          </ProtectedRoute>
+                        }
+                      />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                     <CartPreview />
