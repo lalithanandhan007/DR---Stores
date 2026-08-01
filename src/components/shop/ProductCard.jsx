@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
 import { Heart, ShoppingCart, Eye, Star, Minus, Plus, Leaf, Clock, Award, TrendingUp, MapPin, Tag, Check } from 'lucide-react'
 import { useCart, useToast } from '../../context/CartContext'
+import { useWishlist } from '../../context/AuthContext'
 import ProductVisual from './ProductVisual'
 
 /* ---------- Premium badge component ---------- */
@@ -86,13 +87,14 @@ function HeartParticles({ show }) {
 export default function ProductCard({ product, index = 0 }) {
   const [selectedWeight, setSelectedWeight] = useState(product.weightOptions?.[0] || '')
   const [qty, setQty] = useState(1)
-  const [liked, setLiked] = useState(false)
   const [added, setAdded] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [showParticles, setShowParticles] = useState(false)
   const [ripples, setRipples] = useState([])
   const { addItem } = useCart()
   const { addToast } = useToast()
+  const { toggleWishlist, isWishlisted } = useWishlist()
+  const liked = isWishlisted(product.id)
   const spotlight = useSpotlight()
 
   const discount = product.originalPrice
@@ -118,12 +120,12 @@ export default function ProductCard({ product, index = 0 }) {
   const handleLike = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    setLiked((v) => !v)
     if (!liked) {
       setShowParticles(true)
       addToast(`${product.name} added to wishlist`, 'info')
       setTimeout(() => setShowParticles(false), 1000)
     }
+    toggleWishlist(product)
   }
 
   // Card tilt based on mouse position

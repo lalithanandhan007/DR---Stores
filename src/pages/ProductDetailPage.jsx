@@ -10,6 +10,7 @@ import products from '../data/products'
 import ProductCard from '../components/shop/ProductCard'
 import ProductVisual from '../components/shop/ProductVisual'
 import { useCart, useToast, useRecent } from '../context/CartContext'
+import { useWishlist } from '../context/AuthContext'
 import Footer from '../components/Footer'
 
 /* ---------- Premium tab button ---------- */
@@ -77,13 +78,14 @@ export default function ProductDetailPage() {
   const product = products.find((p) => p.id === id)
   const [selectedWeight, setSelectedWeight] = useState('')
   const [qty, setQty] = useState(1)
-  const [liked, setLiked] = useState(false)
   const [activeTab, setActiveTab] = useState('nutrition')
   const [added, setAdded] = useState(false)
   const [zoomed, setZoomed] = useState(false)
   const { addItem } = useCart()
   const { addToast } = useToast()
   const { addRecent } = useRecent()
+  const { toggleWishlist, isWishlisted } = useWishlist()
+  const liked = isWishlisted(product?.id)
   const purchaseRef = useRef(null)
 
   useEffect(() => {
@@ -355,7 +357,7 @@ export default function ProductDetailPage() {
 
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={() => { setLiked((v) => !v); if (!liked) addToast('Added to wishlist', 'info') }}
+                onClick={() => { if (!liked) addToast('Added to wishlist', 'info'); toggleWishlist(product) }}
                 className={`w-13 h-13 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 ${
                   liked ? 'bg-red-50 border-red-200 text-red-500 shadow-lg shadow-red-500/15' : 'border-black/8 text-dark/35 hover:border-red-200 hover:text-red-500'
                 }`}

@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, useCallback, useState } from 'react'
+import products from '../data/products'
 
 const CartCtx = createContext(null)
 const ToastCtx = createContext(null)
@@ -173,6 +174,49 @@ export function CartProvider({ children }) {
     return order
   }, [cartItems, subtotal, couponDiscount, deliveryFee, packagingFee, tax, grandTotal, appliedCoupon, selectedSlot, defaultAddress])
 
+  /* Sample orders shown on the Orders page when the account has none yet,
+     so every timeline state (Delivered / Preparing / Cancelled) is visible. */
+  const seedDemoOrders = useCallback(() => {
+    setOrderHistory((prev) => {
+      if (prev.length > 0) return prev
+      const byId = (id) => products.find((p) => p.id === id)
+      const mkItem = (id, weight, qty) => ({ product: byId(id), weight, qty })
+      const day = (n) => new Date(Date.now() - n * 864e5).toISOString()
+      const hour = (h) => new Date(Date.now() - h * 36e5).toISOString()
+      const demo = [
+        {
+          id: 'DRDEMO1',
+          items: [mkItem('tomato', '1kg', 2), mkItem('potato', '1kg', 3), mkItem('onion', '1kg', 2), mkItem('spinach', 'bunch', 1)],
+          subtotal: 28 * 2 + 22 * 3 + 18 * 2 + 24 * 1, couponDiscount: 0, deliveryFee: 0, packagingFee: 5, tax: 0,
+          grandTotal: 28 * 2 + 22 * 3 + 18 * 2 + 24 * 1 + 5, coupon: null,
+          slot: { id: 'morning', label: 'Morning', time: '8:00 AM - 11:00 AM', price: 0 },
+          address: { name: 'Priya Sharma', house: '12, Lake View Residency', street: 'MG Road', city: 'Chennai', pincode: '600017' },
+          status: 'delivered', date: day(6),
+        },
+        {
+          id: 'DRDEMO2',
+          items: [mkItem('carrot', '500g', 2), mkItem('broccoli', '250g', 1), mkItem('capsicum-green', '250g', 3)],
+          subtotal: 40 * 2 + 65 * 1 + 35 * 3, couponDiscount: 50, deliveryFee: 30, packagingFee: 5, tax: 0,
+          grandTotal: 40 * 2 + 65 * 1 + 35 * 3 - 50 + 30 + 5, coupon: 'WELCOME50',
+          slot: { id: 'express', label: 'Express Delivery', time: '40 minutes', price: 30 },
+          address: { name: 'Priya Sharma', house: '12, Lake View Residency', street: 'MG Road', city: 'Chennai', pincode: '600017' },
+          status: 'preparing', date: hour(2),
+        },
+        {
+          id: 'DRDEMO3',
+          items: [mkItem('corn', '500g', 1), mkItem('raw-banana', '1kg', 2)],
+          subtotal: 30 * 1 + 24 * 2, couponDiscount: 0, deliveryFee: 0, packagingFee: 5, tax: 0,
+          grandTotal: 30 * 1 + 24 * 2 + 5, coupon: null,
+          slot: { id: 'evening', label: 'Evening', time: '5:00 PM - 8:00 PM', price: 0 },
+          address: { name: 'Priya Sharma', house: '12, Lake View Residency', street: 'MG Road', city: 'Chennai', pincode: '600017' },
+          status: 'cancelled', date: day(3),
+        },
+      ]
+      localStorage.setItem('dr-orders', JSON.stringify(demo))
+      return demo
+    })
+  }, [])
+
   const cartValue = {
     items, cartItems, totalItems, subtotal, totalSaved, grandTotal,
     couponDiscount, deliveryFee, packagingFee, tax,
@@ -183,7 +227,7 @@ export function CartProvider({ children }) {
     addItem, updateQty, removeItem, undoRemove, clearCart,
     removedItem, setRemovedItem,
     previewOpen, setPreviewOpen,
-    placeOrder, orderHistory,
+    placeOrder, orderHistory, seedDemoOrders,
   }
 
   return (

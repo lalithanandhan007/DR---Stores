@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useScroll } from 'framer-motion'
-import { Leaf, ShoppingBasket, LogIn, Menu, X } from 'lucide-react'
+import { Leaf, ShoppingBasket, LogIn, UserPlus, Menu, X, UserRound, Package, Heart, MapPin, Settings, LogOut } from 'lucide-react'
 import { Magnetic, scrollToId } from './ui'
-import { useCart } from '../context/CartContext'
+import { useCart, useToast } from '../context/CartContext'
+import { useAuth, ROLE_LABELS } from '../context/AuthContext'
+import AccountMenu from './account/AccountMenu'
 
 const links = [
   { label: 'Home', to: '/' },
@@ -67,8 +69,23 @@ export default function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
   const { totalItems } = useCart()
+  const { isAuthenticated, user, role, logout } = useAuth()
+  const { addToast } = useToast()
 
-  const isLanding = location.pathname === '/'
+  const accountItems = [
+    { to: '/profile', label: 'My Profile', icon: UserRound },
+    { to: '/orders', label: 'My Orders', icon: Package },
+    { to: '/wishlist', label: 'Wishlist', icon: Heart },
+    { to: '/addresses', label: 'Addresses', icon: MapPin },
+    { to: '/settings', label: 'Settings', icon: Settings },
+  ]
+
+  const handleLogout = () => {
+    setOpen(false)
+    logout()
+    addToast('You have been logged out', 'info', 3000)
+    navigate('/')
+  }
 
   useEffect(() => {
     const unsub = scrollY.on('change', (v) => setScrolled(v > 24))
@@ -124,10 +141,20 @@ export default function Navbar() {
 
           {/* Desktop actions */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-dark/70 hover:text-primary px-4 py-2.5 rounded-full transition-colors duration-300">
-              <LogIn className="w-4 h-4" />
-              Login
-            </Link>
+            {isAuthenticated ? (
+              <AccountMenu />
+            ) : (
+              <>
+                <Link to="/login" className="inline-flex items-center gap-2 text-sm font-semibold text-dark/70 hover:text-primary px-4 py-2.5 rounded-full transition-colors duration-300">
+                  <LogIn className="w-4 h-4" />
+                  Login
+                </Link>
+                <Link to="/register" className="inline-flex items-center gap-2 text-sm font-bold text-primary bg-primary/8 border border-primary/20 px-5 py-2.5 rounded-full hover:bg-primary hover:text-white transition-all duration-300">
+                  <UserPlus className="w-4 h-4" />
+                  Register
+                </Link>
+              </>
+            )}
             <Magnetic strength={0.25}>
               <Link
                 to="/cart"
@@ -209,17 +236,48 @@ export default function Navbar() {
                   </motion.li>
                 ))}
               </ul>
-              <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-black/5">
-                <Link to="/" onClick={() => setOpen(false)} className="px-4 py-3 rounded-full text-sm font-bold text-dark/70 bg-white border border-black/10 text-center">
-                  Login
-                </Link>
-                <button
-                  onClick={() => { setOpen(false); navigate('/vegetables') }}
-                  className="px-4 py-3 rounded-full text-sm font-bold text-white bg-gradient-to-r from-primary to-primary-dark"
-                >
-                  Order Now
-                </button>
-              </div>
+              {isAuthenticated ? (
+                <>
+                  <div className="mt-4 flex items-center gap-3 px-2 py-2 border-t border-black/5">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white text-sm font-extrabold flex items-center justify-center">
+                      {user?.name?.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || 'U'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-dark truncate">{user?.name}</p>
+                      <p className="text-[10px] text-primary font-bold uppercase tracking-wide">{ROLE_LABELS[role] || 'Customer'}</p>
+                    </div>
+                  </div>
+                  <ul className="mt-1">
+                    {accountItems.map((item, i) => (
+                      <motion.li key={item.to} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}>
+                        <Link to={item.to} onClick={() => setOpen(false)} className="w-full text-left px-4 py-3 rounded-2xl text-[15px] font-semibold text-dark/80 hover:bg-primary/8 hover:text-primary transition-colors flex items-center gap-2">
+                          <item.icon className="w-4.5 h-4.5" /> {item.label}
+                        </Link>
+                      </motion.li>
+                    ))}
+                    <motion.li initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+                      <button onClick={handleLogout} className="w-full text-left px-4 py-3 rounded-2xl text-[15px] font-semibold text-red-500/80 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-2">
+                        <LogOut className="w-4.5 h-4.5" /> Logout
+                      </button>
+                    </motion.li>
+                  </ul>
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-black/5">
+                  <Link to="/login" onClick={() => setOpen(false)} className="px-4 py-3 rounded-full text-sm font-bold text-dark/70 bg-white border border-black/10 text-center">
+                    Login
+                  </Link>
+                  <Link to="/register" onClick={() => setOpen(false)} className="px-4 py-3 rounded-full text-sm font-bold text-primary bg-primary/8 border border-primary/20 text-center">
+                    Register
+                  </Link>
+                  <button
+                    onClick={() => { setOpen(false); navigate('/vegetables') }}
+                    className="col-span-2 px-4 py-3 rounded-full text-sm font-bold text-white bg-gradient-to-r from-primary to-primary-dark"
+                  >
+                    Order Now
+                  </button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
