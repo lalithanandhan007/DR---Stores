@@ -149,6 +149,7 @@ export const quickActions = [
 export const adminModules = [
   { id: 'dashboard', label: 'Dashboard', icon: 'layout' },
   { id: 'products', label: 'Products', icon: 'shoppingBag' },
+  { id: 'categories', label: 'Categories', icon: 'box' },
   { id: 'orders', label: 'Orders', icon: 'clipboard' },
   { id: 'customers', label: 'Customers', icon: 'users' },
   { id: 'inventory', label: 'Inventory', icon: 'box' },

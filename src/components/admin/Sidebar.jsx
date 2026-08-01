@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Leaf, LogOut, X, ChevronLeft } from 'lucide-react'
 import { useAdmin } from '../../context/AdminContext'
@@ -8,9 +8,17 @@ import { adminModules, adminProfile } from '../../data/adminData'
 import { AdminIcon } from './ui'
 import Avatar from '../account/Avatar'
 
+/* Routes that have their own pages — active state is URL-derived */
+const ROUTE_MAP = {
+  dashboard: '/admin/dashboard',
+  products: '/admin/products',
+  categories: '/admin/categories',
+}
+
 function NavItem({ module, collapsed, onSelect }) {
+  const { pathname } = useLocation()
   const { activeModule } = useAdmin()
-  const active = activeModule === module.id
+  const active = ROUTE_MAP[module.id] ? pathname.startsWith(ROUTE_MAP[module.id]) : activeModule === module.id
   return (
     <button
       onClick={() => onSelect(module)}
@@ -45,7 +53,7 @@ export default function Sidebar({ mobile = false }) {
 
   const handleSelect = (module) => {
     openModule(module.id)
-    if (module.id === 'dashboard') navigate('/admin/dashboard')
+    if (ROUTE_MAP[module.id]) navigate(ROUTE_MAP[module.id])
   }
 
   const handleLogout = () => {

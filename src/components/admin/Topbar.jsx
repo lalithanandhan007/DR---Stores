@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Bell, Mail, Plus, Calendar, Menu, ChevronRight, ShoppingBag,
@@ -83,11 +83,28 @@ function SearchBar() {
   )
 }
 
+const BREADCRUMB_MAP = {
+  dashboard: 'Dashboard',
+  products: 'Products',
+  categories: 'Categories',
+  'products/new': 'Add Product',
+}
+
+function getBreadcrumb(pathname) {
+  if (pathname === '/admin' || pathname === '/admin/') return 'Dashboard'
+  const segments = pathname.replace('/admin/', '').split('/')
+  if (segments[0] === 'products' && segments[1] === 'new') return 'Add Product'
+  if (segments[0] === 'products' && segments[1] === 'edit') return 'Edit Product'
+  return BREADCRUMB_MAP[segments[0]] || 'Dashboard'
+}
+
 export default function Topbar() {
   const { setMobileOpen, notificationsOpen, setNotificationsOpen, openModule } = useAdmin()
   const { logout } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const breadcrumb = getBreadcrumb(pathname)
   const [quickOpen, setQuickOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const quickRef = useRef(null)
@@ -128,7 +145,7 @@ export default function Topbar() {
         <div className="hidden lg:flex items-center gap-1.5 text-sm min-w-0">
           <span className="text-dark/40">Admin</span>
           <ChevronRight className="w-3.5 h-3.5 text-dark/25" />
-          <span className="font-semibold text-dark truncate">Dashboard</span>
+          <span className="font-semibold text-dark truncate">{breadcrumb}</span>
         </div>
         <span className="lg:hidden text-sm font-semibold text-dark">{today}</span>
 

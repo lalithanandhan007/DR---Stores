@@ -29,6 +29,9 @@ import ToastContainer from './components/shop/ToastContainer'
 /* Admin section is lazy-loaded — pulls in recharts only when an admin visits */
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'))
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
+const ProductsPage = lazy(() => import('./pages/admin/ProductsPage'))
+const ProductFormPage = lazy(() => import('./pages/admin/ProductFormPage'))
+const CategoriesPage = lazy(() => import('./pages/admin/CategoriesPage'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -113,21 +116,18 @@ function App() {
                         element={
                           <ProtectedRoute role="admin">
                             <Suspense fallback={<AdminLoader />}>
-                              <AdminLayout><AdminDashboardPage /></AdminLayout>
+                              <AdminLayout />
                             </Suspense>
                           </ProtectedRoute>
                         }
-                      />
-                      <Route
-                        path="/admin/dashboard"
-                        element={
-                          <ProtectedRoute role="admin">
-                            <Suspense fallback={<AdminLoader />}>
-                              <AdminLayout><AdminDashboardPage /></AdminLayout>
-                            </Suspense>
-                          </ProtectedRoute>
-                        }
-                      />
+                      >
+                        <Route index element={<AdminDashboardPage />} />
+                        <Route path="dashboard" element={<AdminDashboardPage />} />
+                        <Route path="products" element={<ProductsPage />} />
+                        <Route path="products/new" element={<ProductFormPage />} />
+                        <Route path="products/edit/:id" element={<ProductFormPage />} />
+                        <Route path="categories" element={<CategoriesPage />} />
+                      </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                     <CartPreview />

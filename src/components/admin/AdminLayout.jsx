@@ -1,27 +1,38 @@
 import { motion } from 'framer-motion'
 import { LayoutDashboard, ClipboardList, Plus, Boxes, UserRound } from 'lucide-react'
-import { AdminProvider, useAdmin } from '../../context/AdminContext'
+import { AdminProvider } from '../../context/AdminContext'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import ModulePlaceholder from './ModulePlaceholder'
-import { useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+
+/* Routes that have real pages — everything else falls through to ModulePlaceholder */
+const REAL_ROUTES = ['dashboard', 'products', 'categories']
+
+function getActiveModule(pathname) {
+  if (pathname.includes('/admin/products')) return 'products'
+  if (pathname.includes('/admin/categories')) return 'categories'
+  return 'dashboard'
+}
 
 /* Mobile bottom quick-action bar */
 function MobileQuickBar() {
-  const { activeModule, openModule } = useAdmin()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const active = getActiveModule(pathname)
   const items = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'orders', label: 'Orders', icon: ClipboardList },
     { id: 'add', label: 'Add', icon: Plus, accent: true },
-    { id: 'inventory', label: 'Inventory', icon: Boxes },
+    { id: 'products', label: 'Products', icon: Boxes },
     { id: 'profile', label: 'Profile', icon: UserRound },
   ]
 
   const go = (item) => {
-    if (item.id === 'add') { openModule('products'); return }
+    if (item.accent) { navigate('/admin/products/new'); return }
     if (item.id === 'dashboard') navigate('/admin/dashboard')
-    openModule(item.id)
+    else if (item.id === 'products') navigate('/admin/products')
+    // else: placeholder modules
   }
 
   return (
@@ -33,10 +44,10 @@ function MobileQuickBar() {
               key={item.id}
               onClick={() => go(item)}
               className={`relative flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-colors ${
-                item.accent ? 'text-primary' : activeModule === item.id ? 'text-primary' : 'text-dark/40'
+                item.accent ? 'text-primary' : active === item.id ? 'text-primary' : 'text-dark/40'
               }`}
             >
-              {activeModule === item.id && !item.accent && (
+              {active === item.id && !item.accent && (
                 <motion.span layoutId="admin-mobile-active" className="absolute inset-0 rounded-xl bg-primary/10" transition={{ type: 'spring', stiffness: 400, damping: 32 }} />
               )}
               <span className="relative z-10">
@@ -57,8 +68,10 @@ function MobileQuickBar() {
   )
 }
 
-function AdminShell({ children }) {
-  const { activeModule } = useAdmin()
+function AdminShell() {
+  const { pathname } = useLocation()
+  const isRealRoute = REAL_ROUTES.some((r) => pathname.includes(`/admin/${r}`)) || pathname === '/admin' || pathname === '/admin/'
+
   return (
     <div className="min-h-screen bg-[#F5F7F5] text-dark">
       {/* ambient */}
@@ -68,14 +81,13 @@ function AdminShell({ children }) {
       </div>
 
       <div className="relative flex">
-        {/* Mobile drawer + desktop sidebar */}
         <Sidebar mobile />
         <Sidebar />
 
         <div className="flex-1 flex flex-col min-w-0 pb-20 lg:pb-0">
           <Topbar />
           <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[1500px] w-full mx-auto">
-            {activeModule === 'dashboard' ? children : <ModulePlaceholder />}
+            {isRealRoute ? <Outlet /> : <ModulePlaceholder />}
           </main>
         </div>
       </div>
@@ -85,10 +97,10 @@ function AdminShell({ children }) {
   )
 }
 
-export default function AdminLayout({ children }) {
+export default function AdminLayout() {
   return (
     <AdminProvider>
-      <AdminShell>{children}</AdminShell>
+      <AdminShell />
     </AdminProvider>
   )
 }
