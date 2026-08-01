@@ -32,6 +32,13 @@ const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage')
 const ProductsPage = lazy(() => import('./pages/admin/ProductsPage'))
 const ProductFormPage = lazy(() => import('./pages/admin/ProductFormPage'))
 const CategoriesPage = lazy(() => import('./pages/admin/CategoriesPage'))
+const AdminOrdersPage = lazy(() => import('./pages/admin/OrdersPage'))
+const AdminOrderDetailPage = lazy(() => import('./pages/admin/OrderDetailPage'))
+const CustomersPage = lazy(() => import('./pages/admin/CustomersPage'))
+const CustomerDetailPage = lazy(() => import('./pages/admin/CustomerDetailPage'))
+const InventoryPage = lazy(() => import('./pages/admin/InventoryPage'))
+const DeliveryPage = lazy(() => import('./pages/admin/DeliveryPage'))
+const CouponsPage = lazy(() => import('./pages/admin/CouponsPage'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -127,6 +134,13 @@ function App() {
                         <Route path="products/new" element={<ProductFormPage />} />
                         <Route path="products/edit/:id" element={<ProductFormPage />} />
                         <Route path="categories" element={<CategoriesPage />} />
+                        <Route path="orders" element={<AdminOrdersPage />} />
+                        <Route path="orders/:id" element={<AdminOrderDetailPage />} />
+                        <Route path="customers" element={<CustomersPage />} />
+                        <Route path="customers/:id" element={<CustomerDetailPage />} />
+                        <Route path="inventory" element={<InventoryPage />} />
+                        <Route path="delivery" element={<DeliveryPage />} />
+                        <Route path="coupons" element={<CouponsPage />} />
                       </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>

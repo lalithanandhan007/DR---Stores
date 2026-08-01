@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MoreHorizontal, ArrowUpRight } from 'lucide-react'
 import { recentOrders } from '../../data/adminData'
@@ -11,6 +12,7 @@ const STATUS = {
 }
 
 export default function OrderTable() {
+  const navigate = useNavigate()
   return (
     <div className="bg-white rounded-3xl border border-black/5 shadow-soft overflow-hidden">
       <div className="overflow-x-auto admin-scroll">
@@ -73,7 +75,7 @@ export default function OrderTable() {
 
       <div className="flex items-center justify-between px-5 py-3.5 border-t border-black/5">
         <p className="text-[11px] text-dark/40">Showing {recentOrders.length} of 214 today</p>
-        <button className="inline-flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary-dark transition-colors">
+        <button onClick={() => navigate('/admin/orders')} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary-dark transition-colors">
           View all orders <ArrowUpRight className="w-3.5 h-3.5" />
         </button>
       </div>

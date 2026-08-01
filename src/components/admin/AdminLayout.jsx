@@ -1,17 +1,27 @@
 import { motion } from 'framer-motion'
 import { LayoutDashboard, ClipboardList, Plus, Boxes, UserRound } from 'lucide-react'
 import { AdminProvider } from '../../context/AdminContext'
+import { OrdersProvider } from '../../context/OrdersContext'
+import { CustomersProvider } from '../../context/CustomersContext'
+import { InventoryProvider } from '../../context/InventoryContext'
+import { DeliveryProvider } from '../../context/DeliveryContext'
+import { CouponsProvider } from '../../context/CouponsContext'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import ModulePlaceholder from './ModulePlaceholder'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
 /* Routes that have real pages — everything else falls through to ModulePlaceholder */
-const REAL_ROUTES = ['dashboard', 'products', 'categories']
+const REAL_ROUTES = ['dashboard', 'products', 'categories', 'orders', 'customers', 'inventory', 'delivery', 'coupons']
 
 function getActiveModule(pathname) {
   if (pathname.includes('/admin/products')) return 'products'
   if (pathname.includes('/admin/categories')) return 'categories'
+  if (pathname.includes('/admin/orders')) return 'orders'
+  if (pathname.includes('/admin/customers')) return 'customers'
+  if (pathname.includes('/admin/inventory')) return 'inventory'
+  if (pathname.includes('/admin/delivery')) return 'delivery'
+  if (pathname.includes('/admin/coupons')) return 'coupons'
   return 'dashboard'
 }
 
@@ -32,6 +42,7 @@ function MobileQuickBar() {
     if (item.accent) { navigate('/admin/products/new'); return }
     if (item.id === 'dashboard') navigate('/admin/dashboard')
     else if (item.id === 'products') navigate('/admin/products')
+    else if (item.id === 'orders') navigate('/admin/orders')
     // else: placeholder modules
   }
 
@@ -100,7 +111,17 @@ function AdminShell() {
 export default function AdminLayout() {
   return (
     <AdminProvider>
-      <AdminShell />
+      <OrdersProvider>
+        <CustomersProvider>
+          <InventoryProvider>
+            <DeliveryProvider>
+              <CouponsProvider>
+                <AdminShell />
+              </CouponsProvider>
+            </DeliveryProvider>
+          </InventoryProvider>
+        </CustomersProvider>
+      </OrdersProvider>
     </AdminProvider>
   )
 }

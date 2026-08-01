@@ -13,6 +13,11 @@ const ROUTE_MAP = {
   dashboard: '/admin/dashboard',
   products: '/admin/products',
   categories: '/admin/categories',
+  orders: '/admin/orders',
+  customers: '/admin/customers',
+  inventory: '/admin/inventory',
+  delivery: '/admin/delivery',
+  coupons: '/admin/coupons',
 }
 
 function NavItem({ module, collapsed, onSelect }) {

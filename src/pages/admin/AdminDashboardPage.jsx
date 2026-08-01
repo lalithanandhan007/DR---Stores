@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Sparkles, Plus, TicketPercent, ClipboardList, Store, ChevronRight, CalendarDays } from 'lucide-react'
 import { statCards, storeStatus, adminProfile, categoryDistribution } from '../../data/adminData'
@@ -38,6 +39,7 @@ function StatusToggle() {
 
 export default function AdminDashboardPage() {
   const { openModule } = useAdmin()
+  const navigate = useNavigate()
   const firstName = adminProfile.name.split(' ')[0]
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -77,7 +79,7 @@ export default function AdminDashboardPage() {
               {heroQuick.map((q) => (
                 <button
                   key={q.label}
-                  onClick={() => openModule(q.mod)}
+                  onClick={() => (q.mod === 'orders' ? navigate('/admin/orders') : openModule(q.mod))}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/12 border border-white/15 text-white text-xs font-bold hover:bg-white/25 transition-all backdrop-blur"
                 >
                   <q.icon className="w-3.5 h-3.5" /> {q.label}

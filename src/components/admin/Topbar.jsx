@@ -8,7 +8,9 @@ import {
 import { useAdmin } from '../../context/AdminContext'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/CartContext'
-import { adminProfile, recentOrders, notifications } from '../../data/adminData'
+import { useOrders } from '../../context/OrdersContext'
+import { inr } from '../../utils/format'
+import { adminProfile, notifications } from '../../data/adminData'
 import Avatar from '../account/Avatar'
 import NotificationPanel from './NotificationPanel'
 
@@ -24,6 +26,7 @@ function SearchBar() {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const navigate = useNavigate()
+  const { orders } = useOrders()
 
   useEffect(() => {
     const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
@@ -32,7 +35,11 @@ function SearchBar() {
   }, [])
 
   const q = query.trim().toLowerCase()
-  const orderHits = q ? recentOrders.filter((o) => o._id.toLowerCase().includes(q) || o.customer.toLowerCase().includes(q)).slice(0, 4) : []
+  const orderHits = q
+    ? orders
+        .filter((o) => o._id.toLowerCase().includes(q) || o.customer.name.toLowerCase().includes(q) || o.customer.phone.replace(/\s+/g, '').includes(q.replace(/\s+/g, '')))
+        .slice(0, 4)
+    : []
   const hasHits = orderHits.length > 0
 
   return (
@@ -64,13 +71,13 @@ function SearchBar() {
               orderHits.map((o) => (
                 <button
                   key={o._id}
-                  onClick={() => { setOpen(false); navigate('/admin/dashboard') }}
+                  onClick={() => { setOpen(false); navigate(`/admin/orders/${o._id}`) }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/8 transition-colors text-left"
                 >
-                  <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{o.avatar}</span>
+                  <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{o.customer.avatar}</span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-xs font-bold text-dark">{o.customer}</span>
-                    <span className="block text-[10px] text-dark/40">{o._id} · {o.amount ? `₹${o.amount}` : ''} · {o.items} items</span>
+                    <span className="block text-xs font-bold text-dark">{o.customer.name}</span>
+                    <span className="block text-[10px] text-dark/40">{o._id} · {inr(o.grandTotal)} · {o.items.reduce((s, it) => s + it.qty, 0)} items</span>
                   </span>
                   <ChevronRight className="w-3.5 h-3.5 text-dark/25" />
                 </button>
@@ -87,6 +94,11 @@ const BREADCRUMB_MAP = {
   dashboard: 'Dashboard',
   products: 'Products',
   categories: 'Categories',
+  orders: 'Orders',
+  customers: 'Customers',
+  inventory: 'Inventory',
+  delivery: 'Delivery Partners',
+  coupons: 'Coupons',
   'products/new': 'Add Product',
 }
 
@@ -95,6 +107,8 @@ function getBreadcrumb(pathname) {
   const segments = pathname.replace('/admin/', '').split('/')
   if (segments[0] === 'products' && segments[1] === 'new') return 'Add Product'
   if (segments[0] === 'products' && segments[1] === 'edit') return 'Edit Product'
+  if (segments[0] === 'orders' && segments[1]) return 'Order Details'
+  if (segments[0] === 'customers' && segments[1]) return 'Customer Details'
   return BREADCRUMB_MAP[segments[0]] || 'Dashboard'
 }
 

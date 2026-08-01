@@ -215,6 +215,44 @@ html.lenis body {
 .delay-300 { animation-delay: 0.3s; }
 .delay-400 { animation-delay: 0.4s; }
 
+/* Slim scrollbar for admin scroll containers */
+.admin-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.admin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-scroll::-webkit-scrollbar-thumb {
+  background: rgba(27, 27, 27, 0.14);
+  border-radius: 8px;
+}
+.admin-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(46, 125, 50, 0.45);
+}
+
+/* ---------- Print — isolate the invoice ---------- */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #invoice-print,
+  #invoice-print * {
+    visibility: visible !important;
+  }
+  #invoice-print {
+    position: absolute !important;
+    inset: 0;
+    width: 100%;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+  .fixed {
+    position: absolute !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .float-slow, .float-med, .float-fast, .wheel-spin, .scooter-bounce,
   .drift-line, .pulse-ring, .spin-slow, .spin-slow-reverse {
