@@ -18,6 +18,10 @@ const ROUTE_MAP = {
   inventory: '/admin/inventory',
   delivery: '/admin/delivery',
   coupons: '/admin/coupons',
+  analytics: '/admin/analytics',
+  reports: '/admin/reports',
+  settings: '/admin/settings',
+  activity: '/admin/activity',
 }
 
 function NavItem({ module, collapsed, onSelect }) {

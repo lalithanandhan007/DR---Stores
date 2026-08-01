@@ -99,6 +99,10 @@ const BREADCRUMB_MAP = {
   inventory: 'Inventory',
   delivery: 'Delivery Partners',
   coupons: 'Coupons',
+  analytics: 'Analytics',
+  reports: 'Reports',
+  settings: 'Store Settings',
+  activity: 'Activity Logs',
   'products/new': 'Add Product',
 }
 

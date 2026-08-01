@@ -39,6 +39,10 @@ const CustomerDetailPage = lazy(() => import('./pages/admin/CustomerDetailPage')
 const InventoryPage = lazy(() => import('./pages/admin/InventoryPage'))
 const DeliveryPage = lazy(() => import('./pages/admin/DeliveryPage'))
 const CouponsPage = lazy(() => import('./pages/admin/CouponsPage'))
+const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'))
+const AnalyticsPage = lazy(() => import('./pages/admin/AnalyticsPage'))
+const AdminSettingsPage = lazy(() => import('./pages/admin/SettingsPage'))
+const AdminActivityPage = lazy(() => import('./pages/admin/ActivityLogsPage'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -141,6 +145,10 @@ function App() {
                         <Route path="inventory" element={<InventoryPage />} />
                         <Route path="delivery" element={<DeliveryPage />} />
                         <Route path="coupons" element={<CouponsPage />} />
+                        <Route path="reports" element={<ReportsPage />} />
+                        <Route path="analytics" element={<AnalyticsPage />} />
+                        <Route path="settings" element={<AdminSettingsPage />} />
+                        <Route path="activity" element={<AdminActivityPage />} />
                       </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>

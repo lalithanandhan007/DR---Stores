@@ -12,7 +12,7 @@ import ModulePlaceholder from './ModulePlaceholder'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
 /* Routes that have real pages — everything else falls through to ModulePlaceholder */
-const REAL_ROUTES = ['dashboard', 'products', 'categories', 'orders', 'customers', 'inventory', 'delivery', 'coupons']
+const REAL_ROUTES = ['dashboard', 'products', 'categories', 'orders', 'customers', 'inventory', 'delivery', 'coupons', 'reports', 'analytics', 'settings', 'activity']
 
 function getActiveModule(pathname) {
   if (pathname.includes('/admin/products')) return 'products'
@@ -22,6 +22,10 @@ function getActiveModule(pathname) {
   if (pathname.includes('/admin/inventory')) return 'inventory'
   if (pathname.includes('/admin/delivery')) return 'delivery'
   if (pathname.includes('/admin/coupons')) return 'coupons'
+  if (pathname.includes('/admin/reports')) return 'reports'
+  if (pathname.includes('/admin/analytics')) return 'analytics'
+  if (pathname.includes('/admin/settings')) return 'settings'
+  if (pathname.includes('/admin/activity')) return 'activity'
   return 'dashboard'
 }
 
