@@ -35,7 +35,7 @@ function KpiStrip({ counts, typeFilter, onSelect }) {
 /* ================= MAIN PAGE ================= */
 export default function ActivityLogsPage() {
   const { addToast } = useToast()
-  const { activity: activityLogs } = useAdminData()
+  const { activity: activityLogs, loading } = useAdminData()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [severityFilter, setSeverityFilter] = useState('')
@@ -107,6 +107,14 @@ export default function ActivityLogsPage() {
       </div>
 
       <div className="bg-white rounded-3xl border border-black/5 shadow-soft overflow-hidden">
+        {loading ? (
+          <div className="p-5 space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-14 rounded-xl bg-black/4 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+        <>
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[850px]">
             <thead>
@@ -159,6 +167,8 @@ export default function ActivityLogsPage() {
             <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages} className="w-8 h-8 rounded-xl flex items-center justify-center text-dark/30 hover:bg-primary/8 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* Filter modal */}

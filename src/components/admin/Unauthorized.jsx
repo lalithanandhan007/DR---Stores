@@ -1,30 +1,11 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ShieldAlert, ArrowLeft, Store, Sparkles, Lock } from 'lucide-react'
+import { ShieldAlert, ArrowLeft, Lock } from 'lucide-react'
 import { useAuth, ROLE_LABELS } from '../../context/AuthContext'
-import { useToast } from '../../context/CartContext'
 
-/* Premium access-denied page shown when a non-admin user reaches admin routes.
-   Includes a demo switch (frontend-only) so the dashboard can be explored. */
+/* Access-denied page shown when a non-admin user reaches admin routes. */
 export default function Unauthorized() {
-  const { role, loginWithPassword } = useAuth()
-  const { addToast } = useToast()
-  const [busy, setBusy] = useState(false)
-
-  const switchToAdminDemo = async () => {
-    if (busy) return
-    setBusy(true)
-    // Real MongoDB-backed admin session (seeded admin account)
-    const result = await loginWithPassword('admin@drstores.com', 'demo123')
-    setBusy(false)
-    if (result.success) {
-      addToast('Switched to Admin demo account', 'success', 3000)
-      setTimeout(() => window.location.reload(), 600)
-    } else {
-      addToast(result.message || 'Could not switch to admin account', 'error', 3500)
-    }
-  }
+  const { role } = useAuth()
 
   return (
     <div className="min-h-screen bg-cream pt-28 flex items-center justify-center px-5 overflow-hidden relative">
@@ -62,7 +43,7 @@ export default function Unauthorized() {
             transition={{ delay: 0.25 }}
             className="mt-6 font-serif-display text-3xl font-bold text-dark tracking-tight"
           >
-            Restricted Area
+            Access Denied
           </motion.h1>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
@@ -74,31 +55,10 @@ export default function Unauthorized() {
               </span>.
             </p>
 
-            <div className="mt-6 rounded-2xl bg-primary/4 border border-primary/10 p-4 text-left">
-              <p className="text-xs font-bold text-primary flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> Frontend demo
-              </p>
-              <p className="text-[11px] text-dark/50 mt-1 leading-relaxed">
-                This project has no backend yet. You can explore the admin dashboard instantly with the demo admin account.
-              </p>
-            </div>
-
-            <div className="mt-6 grid gap-3">
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={switchToAdminDemo}
-                className="w-full h-13 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all"
-              >
-                Continue as Admin (Demo)
-              </motion.button>
-              <div className="grid grid-cols-2 gap-3">
-                <Link to="/" className="inline-flex items-center justify-center gap-2 h-12 rounded-2xl border border-black/10 text-sm font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
-                  <ArrowLeft className="w-4 h-4" /> Back to Store
-                </Link>
-                <Link to="/profile" className="inline-flex items-center justify-center gap-2 h-12 rounded-2xl border border-black/10 text-sm font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
-                  <Store className="w-4 h-4" /> My Account
-                </Link>
-              </div>
+            <div className="mt-6">
+              <Link to="/" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                <ArrowLeft className="w-4 h-4" /> Back to Store
+              </Link>
             </div>
           </motion.div>
         </motion.div>

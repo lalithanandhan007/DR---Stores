@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, X, ArrowRight, Leaf, SlidersHorizontal, Grid3X3, List, Search, Sparkles } from 'lucide-react'
 import { useProducts } from '../context/ProductsContext'
 import ProductCard from '../components/shop/ProductCard'
+import Skeleton from '../components/ui/Skeleton'
 import FilterSidebar from '../components/shop/FilterSidebar'
 import Footer from '../components/Footer'
 
@@ -36,7 +37,7 @@ function FloatingLeaf({ style, delay = 0 }) {
 }
 
 export default function VegetablesPage() {
-  const { products } = useProducts()
+  const { products, loading, error } = useProducts()
   const [filters, setFilters] = useState(defaultFilters)
   const [viewMode, setViewMode] = useState('grid')
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
@@ -273,7 +274,22 @@ export default function VegetablesPage() {
             )}
 
             {/* Product grid — 2 cols large, 3 XL, 1 mobile */}
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-7' : 'flex flex-col gap-5'}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <Skeleton key={i} className={viewMode === 'grid' ? 'h-80 rounded-3xl' : 'h-32 rounded-3xl'} />
+                ))}
+              </div>
+            ) : error ? (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-24 text-center">
+                <span className="text-7xl mb-5 block">⚠️</span>
+                <h3 className="text-2xl font-bold text-dark/65">Could not load vegetables</h3>
+                <p className="text-sm text-dark/40 mt-2 max-w-sm">{error}</p>
+                <button onClick={() => setFilters(defaultFilters)} className="mt-6 inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold hover:shadow-cta transition-all">
+                  Clear Filters <ArrowRight className="w-4 h-4" />
+                </button>
+              </motion.div>
+            ) : filtered.length === 0 ? (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-24 text-center">
                 <span className="text-7xl mb-5 block">🥬</span>
                 <h3 className="text-2xl font-bold text-dark/65">No vegetables found</h3>

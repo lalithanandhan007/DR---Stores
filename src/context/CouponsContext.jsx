@@ -7,11 +7,23 @@ const CouponsCtx = createContext(null)
 
 export function CouponsProvider({ children }) {
   const [coupons, setCoupons] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const { addToast } = useToast()
 
-  useEffect(() => {
-    couponApi.list().then((list) => setCoupons(list || [])).catch(() => {})
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    couponApi.list()
+      .then((list) => {
+        setCoupons(list || [])
+        setError(null)
+      })
+      .catch((err) => setError(getErrorMessage(err, 'Could not load coupons')))
+      .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { load() }, [load])
 
   const getCoupon = useCallback((id) => coupons.find((c) => c._id === id), [coupons])
 
@@ -68,7 +80,8 @@ export function CouponsProvider({ children }) {
 
   const value = useMemo(() => ({
     coupons, getCoupon, addCoupon, updateCoupon, toggleActive, deleteCoupon, deleteCoupons,
-  }), [coupons, getCoupon, addCoupon, updateCoupon, toggleActive, deleteCoupon, deleteCoupons])
+    loading, error, refresh: load,
+  }), [coupons, getCoupon, addCoupon, updateCoupon, toggleActive, deleteCoupon, deleteCoupons, loading, error, load])
 
   return <CouponsCtx.Provider value={value}>{children}</CouponsCtx.Provider>
 }

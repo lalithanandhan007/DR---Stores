@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/CartContext'
 import { useOrders } from '../../context/OrdersContext'
 import { inr } from '../../utils/format'
-import { adminProfile, notifications } from '../../data/adminData'
+import { useAdminData } from '../../context/AdminDataContext'
 import Avatar from '../account/Avatar'
 import NotificationPanel from './NotificationPanel'
 
@@ -122,6 +122,7 @@ export default function Topbar() {
   const { addToast } = useToast()
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { adminProfile: apiProfile, notifications: apiNotifs } = useAdminData()
   const breadcrumb = getBreadcrumb(pathname)
   const [quickOpen, setQuickOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -139,7 +140,7 @@ export default function Topbar() {
     return () => document.removeEventListener('mousedown', onDown)
   }, [setNotificationsOpen])
 
-  const unread = notifications.filter((n) => !n.read).length
+  const unread = (apiNotifs || []).filter((n) => !n.read).length
 
   const handleLogout = () => {
     logout()
@@ -242,7 +243,7 @@ export default function Topbar() {
           {/* Admin avatar dropdown */}
           <div ref={profileRef} className="relative">
             <button onClick={() => setProfileOpen((o) => !o)} className="flex items-center gap-1.5 pl-1.5 pr-1 py-1 rounded-full hover:bg-black/5 transition-colors" aria-label="Admin menu">
-              <Avatar name={adminProfile.name} avatar={adminProfile.avatar} size={34} ring />
+              <Avatar name={apiProfile?.name} avatar={apiProfile?.avatar} size={34} ring />
               <ChevronDown className="w-3.5 h-3.5 text-dark/35" />
             </button>
             <AnimatePresence>
@@ -255,10 +256,10 @@ export default function Topbar() {
                   className="absolute right-0 top-[calc(100%+10px)] w-60 glass-card rounded-2xl p-3 shadow-lift z-50"
                 >
                   <div className="flex items-center gap-3 px-2 py-2 border-b border-black/5 mb-1">
-                    <Avatar name={adminProfile.name} avatar={adminProfile.avatar} size={40} />
+                    <Avatar name={apiProfile?.name} avatar={apiProfile?.avatar} size={40} />
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-dark truncate">{adminProfile.name}</p>
-                      <p className="text-[10px] text-dark/40 truncate">{adminProfile.email}</p>
+                      <p className="text-sm font-bold text-dark truncate">{apiProfile?.name}</p>
+                      <p className="text-[10px] text-dark/40 truncate">{apiProfile?.email}</p>
                     </div>
                   </div>
                   {[

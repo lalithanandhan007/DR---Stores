@@ -218,7 +218,7 @@ function FilterPanel({ filters, setFilters, open, onClose }) {
 /* ================= MAIN PRODUCTS PAGE ================= */
 export default function ProductsPage() {
   const navigate = useNavigate()
-  const { allProducts, categories } = useProducts()
+  const { allProducts, categories, loading } = useProducts()
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('updatedAt')
   const [sortDir, setSortDir] = useState('desc')
@@ -338,6 +338,14 @@ export default function ProductsPage() {
 
       {/* Table */}
       <div className="bg-white rounded-3xl border border-black/5 shadow-soft overflow-hidden">
+        {loading ? (
+          <div className="p-5 space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-14 rounded-xl bg-black/4 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+        <>
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[1000px]">
             <thead>
@@ -398,6 +406,13 @@ export default function ProductsPage() {
               })}
             </tbody>
           </table>
+          {filtered.length === 0 && !loading && (
+            <div className="py-20 text-center">
+              <span className="w-16 h-16 mx-auto rounded-3xl bg-primary/8 flex items-center justify-center"><ShoppingCart className="w-8 h-8 text-primary" /></span>
+              <h3 className="mt-5 font-serif-display text-xl font-bold text-dark">No products found</h3>
+              <p className="mt-1.5 text-sm text-dark/45 font-light">Try a different search or clear filters.</p>
+            </div>
+          )}
         </div>
         {/* Pagination */}
         <div className="flex items-center justify-between px-5 py-3.5 border-t border-black/5">
@@ -411,6 +426,8 @@ export default function ProductsPage() {
             <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="w-8 h-8 rounded-xl flex items-center justify-center text-dark/30 hover:bg-primary/8 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       <FilterPanel filters={filters} setFilters={setFilters} open={filterOpen} onClose={() => setFilterOpen(false)} />

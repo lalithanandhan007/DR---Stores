@@ -1,6 +1,6 @@
 import Order from '../models/Order.js';
 import Cart from '../models/Cart.js';
-import { Inventory } from '../models/Inventory.js';
+import { Inventory, StockHistory } from '../models/Inventory.js';
 import Notification from '../models/Notification.js';
 import ActivityLog from '../models/ActivityLog.js';
 import Coupon from '../models/Coupon.js';
@@ -75,13 +75,18 @@ export const placeOrder = asyncHandler(async (req, res) => {
     createdAt: new Date(),
   });
 
-  // Decrement inventory
+  // Decrement inventory + log stock history (COD: immediate deduction)
   for (const item of orderItems) {
     const inv = await Inventory.findOne({ product: item.productId });
     if (inv) {
       inv.currentStock = Math.max(0, inv.currentStock - item.qty);
       inv.status = inv.currentStock <= 0 ? 'out_of_stock' : inv.currentStock < inv.minStock ? 'low' : 'in_stock';
       await inv.save();
+      await StockHistory.create({
+        _id: `sh_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
+        productId: item.productId, type: 'sale', quantity: -item.qty,
+        reason: 'Customer order (COD)', performedBy: 'System', timestamp: new Date(),
+      });
     }
   }
 
@@ -146,9 +151,33 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     time: new Date(), actor: 'Store',
   });
 
-  if (status === 'delivered') order.delivery.deliveredAt = new Date();
-  await order.save();
+  if (status === 'delivered') {
+    order.delivery.deliveredAt = new Date();
+  }
 
+  // Restore inventory on cancellation or refund
+  if (status === 'cancelled' || status === 'refunded') {
+    for (const item of (order.items || [])) {
+      const inv = await Inventory.findOne({ product: item.productId });
+      if (inv) {
+        inv.currentStock += item.qty;
+        inv.status = inv.currentStock <= 0 ? 'out_of_stock' : inv.currentStock < inv.minStock ? 'low' : 'in_stock';
+        await inv.save();
+        await StockHistory.create({
+          _id: `sh_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,6)}`,
+          productId: item.productId, type: 'return', quantity: item.qty,
+          reason: status === 'refunded' ? 'Order refunded' : 'Order cancelled',
+          performedBy: req.user?.name || 'Store', timestamp: new Date(),
+        });
+      }
+    }
+    // Update payment status if it was paid
+    if (order.payment?.status === 'paid' || order.payment?.status === 'cod') {
+      order.payment.status = status === 'refunded' ? 'refunded' : 'failed';
+    }
+  }
+
+  await order.save();
   res.json(ApiResponse.success(order, 'Order status updated'));
 });
 

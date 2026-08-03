@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, GripVertical, X, Eye, EyeOff } from 'lucide-react'
+import { Plus, Pencil, Trash2, GripVertical, X, Eye, EyeOff, Box } from 'lucide-react'
 import { useProducts } from '../../context/ProductsContext'
 import { productApi } from '../../api'
 import { SectionHeader } from '../../components/admin/ui'
@@ -79,7 +79,7 @@ function DeleteConfirm({ category, onClose, onConfirm }) {
 /* ================= MAIN CATEGORIES PAGE ================= */
 export default function CategoriesPage() {
   const { addToast } = useToast()
-  const { categories: ctxCategories, refresh } = useProducts()
+  const { categories: ctxCategories, refresh, loading } = useProducts()
   const [categories, setCategories] = useState(ctxCategories)
   const [editing, setEditing] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
@@ -147,8 +147,21 @@ export default function CategoriesPage() {
         </button>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {categories.map((cat, i) => (
+      {loading ? (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-40 rounded-3xl bg-black/4 animate-pulse" />
+          ))}
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="py-20 text-center">
+          <span className="w-16 h-16 mx-auto rounded-3xl bg-primary/8 flex items-center justify-center"><Box className="w-8 h-8 text-primary" /></span>
+          <h3 className="mt-5 font-serif-display text-xl font-bold text-dark">No categories yet</h3>
+          <p className="mt-1.5 text-sm text-dark/45 font-light">Create your first category to organize your products.</p>
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {categories.map((cat, i) => (
           <motion.div
             key={cat._id}
             initial={{ opacity: 0, y: 16 }}
@@ -179,7 +192,8 @@ export default function CategoriesPage() {
             </div>
           </motion.div>
         ))}
-      </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {showAdd && <CategoryModal category={editing} onClose={() => { setShowAdd(false); setEditing(null) }} onSave={handleSave} />}

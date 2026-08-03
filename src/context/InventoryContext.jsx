@@ -8,11 +8,16 @@ const InventoryCtx = createContext(null)
 export function InventoryProvider({ children }) {
   const [inventory, setInventory] = useState([])
   const [history, setHistory] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const { addToast } = useToast()
 
   const load = useCallback(() => {
-    inventoryApi.list().then((items) => setInventory(items || [])).catch(() => {})
-    inventoryApi.history().then((h) => setHistory(h || [])).catch(() => {})
+    setLoading(true)
+    setError(null)
+    inventoryApi.list().then((items) => setInventory(items || [])).catch(() => setError('Could not load inventory'))
+      .finally(() => setLoading(false))
+    inventoryApi.history().then((h) => setHistory(h || [])).catch(() => setError('Could not load stock history'))
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -52,7 +57,8 @@ export function InventoryProvider({ children }) {
 
   const value = useMemo(() => ({
     inventory, history, getItem, restock, adjustStock, bulkRestock,
-  }), [inventory, history, getItem, restock, adjustStock, bulkRestock])
+    loading, error, refresh: load,
+  }), [inventory, history, getItem, restock, adjustStock, bulkRestock, loading, error, load])
 
   return <InventoryCtx.Provider value={value}>{children}</InventoryCtx.Provider>
 }

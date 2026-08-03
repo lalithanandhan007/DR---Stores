@@ -112,35 +112,47 @@ export function CartProvider({ children }) {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [appliedCoupon, setAppliedCoupon] = useState(null)
   const [selectedSlot, setSelectedSlot] = useState(deliverySlots[0])
+  /* Authenticated users keep addresses in MongoDB (loaded by the effect
+     below); localStorage is only used for guest checkout. */
   const [addresses, setAddresses] = useState(() => {
+    if (isAuthenticated) return []
     try { return JSON.parse(localStorage.getItem('dr-addresses') || '[]') } catch { return [] }
   })
   const [defaultAddressId, setDefaultAddressId] = useState(() => {
+    if (isAuthenticated) return null
     try { return localStorage.getItem('dr-default-address') || null } catch { return null }
   })
   const [removedItem, setRemovedItem] = useState(null)
   const [orderHistory, setOrderHistory] = useState([])
   const [ordersLoading, setOrdersLoading] = useState(false)
+  const [cartLoading, setCartLoading] = useState(true)
 
   /* Load DB cart + addresses + orders whenever the session changes */
   useEffect(() => {
     if (!isAuthenticated || !user) {
       setOrderHistory([])
+      setCartLoading(false)
       return
     }
+    setCartLoading(true)
     setOrdersLoading(true)
-    cartApi.get().then((cart) => {
-      dispatch({ type: 'SET', items: (cart.items || []).map(toFrontendItem) })
-    }).catch(() => {})
-    addressApi.list().then((list) => {
-      const mapped = (list || []).map((a) => ({ ...a, id: a._id }))
-      setAddresses(mapped)
-      const def = mapped.find((a) => a.isDefault)
-      setDefaultAddressId(def?.id || mapped[0]?.id || null)
-    }).catch(() => {})
-    orderApi.my().then((orders) => {
-      setOrderHistory((orders || []).map((o) => ({ ...o, id: o._id, date: o.createdAt || o.date })))
-    }).catch(() => {}).finally(() => setOrdersLoading(false))
+    Promise.all([
+      cartApi.get().then((cart) => {
+        dispatch({ type: 'SET', items: (cart.items || []).map(toFrontendItem) })
+      }).catch(() => {}),
+      addressApi.list().then((list) => {
+        const mapped = (list || []).map((a) => ({ ...a, id: a._id }))
+        setAddresses(mapped)
+        const def = mapped.find((a) => a.isDefault)
+        setDefaultAddressId(def?.id || mapped[0]?.id || null)
+      }).catch(() => {}),
+      orderApi.my().then((orders) => {
+        setOrderHistory((orders || []).map((o) => ({ ...o, id: o._id, date: o.createdAt || o.date })))
+      }).catch(() => {}),
+    ]).finally(() => {
+      setOrdersLoading(false)
+      setCartLoading(false)
+    })
   }, [isAuthenticated, user])
 
   const addItem = useCallback((product, weight, qty = 1) => {
@@ -233,20 +245,25 @@ export function CartProvider({ children }) {
   /* ---------- Addresses (MongoDB-backed when logged in) ---------- */
   const saveAddress = useCallback((addr) => {
     if (isAuthenticated) {
+      // Map form fields (type, area) to backend fields (label, locality)
       const payload = {
-        label: addr.label, name: addr.name || user?.name, house: addr.house, street: addr.street,
-        locality: addr.locality, city: addr.city, pincode: addr.pincode, landmark: addr.landmark,
+        label: addr.label || addr.type, // form uses 'type', backend uses 'label'
+        name: addr.name || user?.name,
+        house: addr.house,
+        street: addr.street,
+        locality: addr.locality || addr.area, // form uses 'area', backend uses 'locality'
+        city: addr.city,
+        pincode: addr.pincode,
+        landmark: addr.landmark,
         isDefault: addr.isDefault || addresses.length === 0,
       }
       return (addr.id ? addressApi.update(addr.id, payload) : addressApi.create(payload)).then((saved) => {
         const mapped = { ...saved, id: saved._id }
-        setAddresses((prev) => {
-          const updated = addr.id ? prev.map((a) => a.id === addr.id ? mapped : a) : [...prev, mapped]
-          localStorage.setItem('dr-addresses', JSON.stringify(updated))
-          return updated
-        })
+        setAddresses((prev) => addr.id ? prev.map((a) => a.id === addr.id ? mapped : a) : [...prev, mapped])
         if (mapped.isDefault) setDefaultAddressId(mapped.id)
         return saved
+      }).catch((err) => {
+        emitToast(getErrorMessage(err, 'Could not save address'), 'error', 3000)
       })
     }
     return new Promise((resolve) => {
@@ -262,7 +279,7 @@ export function CartProvider({ children }) {
   const deleteAddress = useCallback((id) => {
     setAddresses((prev) => {
       const updated = prev.filter((a) => a.id !== id)
-      localStorage.setItem('dr-addresses', JSON.stringify(updated))
+      if (!isAuthenticated) localStorage.setItem('dr-addresses', JSON.stringify(updated))
       return updated
     })
     if (defaultAddressId === id) setDefaultAddressId(null)
@@ -271,7 +288,7 @@ export function CartProvider({ children }) {
 
   const setDefaultAddress = useCallback((id) => {
     setDefaultAddressId(id)
-    localStorage.setItem('dr-default-address', id)
+    if (!isAuthenticated) localStorage.setItem('dr-default-address', id)
     if (isAuthenticated) addressApi.setDefault(id).catch(() => {})
   }, [isAuthenticated])
 
@@ -318,57 +335,17 @@ export function CartProvider({ children }) {
         status: 'confirmed',
         date: new Date().toISOString(),
       }
-      setOrderHistory((prev) => {
-        const updated = [order, ...prev]
-        localStorage.setItem('dr-orders', JSON.stringify(updated))
-        return updated
-      })
+      setOrderHistory((prev) => [order, ...prev])
       dispatch({ type: 'CLEAR' })
       setAppliedCoupon(null)
       resolve({ success: true, order })
     })
   }, [isAuthenticated, cartItems, subtotal, couponDiscount, deliveryFee, packagingFee, tax, grandTotal, appliedCoupon, selectedSlot, defaultAddress])
 
-  /* Sample orders shown on the Orders page when the account has none yet */
+  /* Sample orders shown on the Orders page when the account has none yet.
+     Demo seeding is disabled — order history loads from the MongoDB API. */
   const seedDemoOrders = useCallback(() => {
-    setOrderHistory((prev) => {
-      if (prev.length > 0) return prev
-      const byId = (id) => products.find((p) => p.id === id)
-      const mkItem = (id, weight, qty) => ({ product: byId(id), weight, qty })
-      const day = (n) => new Date(Date.now() - n * 864e5).toISOString()
-      const hour = (h) => new Date(Date.now() - h * 36e5).toISOString()
-      const demo = [
-        {
-          id: 'DRDEMO1',
-          items: [mkItem('tomato', '1kg', 2), mkItem('potato', '1kg', 3), mkItem('onion', '1kg', 2), mkItem('spinach', 'bunch', 1)],
-          subtotal: 28 * 2 + 22 * 3 + 18 * 2 + 24 * 1, couponDiscount: 0, deliveryFee: 0, packagingFee: 5, tax: 0,
-          grandTotal: 28 * 2 + 22 * 3 + 18 * 2 + 24 * 1 + 5, coupon: null,
-          slot: { id: 'morning', label: 'Morning', time: '8:00 AM - 11:00 AM', price: 0 },
-          address: { name: 'Priya Sharma', house: '12, Lake View Residency', street: 'MG Road', city: 'Chennai', pincode: '600017' },
-          status: 'delivered', date: day(6),
-        },
-        {
-          id: 'DRDEMO2',
-          items: [mkItem('carrot', '500g', 2), mkItem('broccoli', '250g', 1), mkItem('capsicum-green', '250g', 3)],
-          subtotal: 40 * 2 + 65 * 1 + 35 * 3, couponDiscount: 50, deliveryFee: 30, packagingFee: 5, tax: 0,
-          grandTotal: 40 * 2 + 65 * 1 + 35 * 3 - 50 + 30 + 5, coupon: 'WELCOME50',
-          slot: { id: 'express', label: 'Express Delivery', time: '40 minutes', price: 30 },
-          address: { name: 'Priya Sharma', house: '12, Lake View Residency', street: 'MG Road', city: 'Chennai', pincode: '600017' },
-          status: 'preparing', date: hour(2),
-        },
-        {
-          id: 'DRDEMO3',
-          items: [mkItem('corn', '500g', 1), mkItem('raw-banana', '1kg', 2)],
-          subtotal: 30 * 1 + 24 * 2, couponDiscount: 0, deliveryFee: 0, packagingFee: 5, tax: 0,
-          grandTotal: 30 * 1 + 24 * 2 + 5, coupon: null,
-          slot: { id: 'evening', label: 'Evening', time: '5:00 PM - 8:00 PM', price: 0 },
-          address: { name: 'Priya Sharma', house: '12, Lake View Residency', street: 'MG Road', city: 'Chennai', pincode: '600017' },
-          status: 'cancelled', date: day(3),
-        },
-      ]
-      localStorage.setItem('dr-orders', JSON.stringify(demo))
-      return demo
-    })
+    /* no-op */
   }, [])
 
   const cartValue = useMemo(() => ({
@@ -381,7 +358,7 @@ export function CartProvider({ children }) {
     addItem, updateQty, removeItem, undoRemove, clearCart,
     removedItem, setRemovedItem,
     previewOpen, setPreviewOpen,
-    placeOrder, orderHistory, seedDemoOrders, ordersLoading,
+    placeOrder, orderHistory, seedDemoOrders, ordersLoading, cartLoading,
   }), [
     items, cartItems, totalItems, subtotal, totalSaved, grandTotal,
     couponDiscount, deliveryFee, packagingFee, tax,
@@ -390,7 +367,7 @@ export function CartProvider({ children }) {
     saveAddress, deleteAddress, setDefaultAddress,
     addItem, updateQty, removeItem, undoRemove, clearCart,
     removedItem, previewOpen,
-    placeOrder, orderHistory, seedDemoOrders, ordersLoading,
+    placeOrder, orderHistory, seedDemoOrders, ordersLoading, cartLoading,
   ])
 
   return (
@@ -416,8 +393,24 @@ function toastReducer(state, action) {
   }
 }
 
+/* ToastProvider is rendered below CartProvider in App.jsx, so CartProvider
+   can't consume ToastCtx directly. This module-level emitter lets
+   CartProvider surface toasts to the same ToastProvider queue. */
+let toastDispatch = null
+function emitToast(message, type = 'success', duration = 3000) {
+  if (!toastDispatch) return
+  const id = ++toastId
+  toastDispatch({ type: 'ADD', toast: { id, message, type } })
+  setTimeout(() => toastDispatch({ type: 'REMOVE', id }), duration)
+}
+
 export function ToastProvider({ children }) {
   const [toasts, dispatch] = useReducer(toastReducer, [])
+
+  useEffect(() => {
+    toastDispatch = dispatch
+    return () => { toastDispatch = null }
+  }, [])
 
   const addToast = useCallback((message, type = 'success', duration = 3000) => {
     const id = ++toastId

@@ -7,11 +7,23 @@ const DeliveryCtx = createContext(null)
 
 export function DeliveryProvider({ children }) {
   const [partners, setPartners] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const { addToast } = useToast()
 
-  useEffect(() => {
-    deliveryApi.list().then((list) => setPartners(list || [])).catch(() => {})
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    deliveryApi.list()
+      .then((list) => {
+        setPartners(list || [])
+        setError(null)
+      })
+      .catch((err) => setError(getErrorMessage(err, 'Could not load delivery partners')))
+      .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { load() }, [load])
 
   const getPartner = useCallback((id) => partners.find((p) => p._id === id), [partners])
 
@@ -47,7 +59,8 @@ export function DeliveryProvider({ children }) {
 
   const value = useMemo(() => ({
     partners, getPartner, toggleOnline, updateStatus, deletePartners,
-  }), [partners, getPartner, toggleOnline, updateStatus, deletePartners])
+    loading, error, refresh: load,
+  }), [partners, getPartner, toggleOnline, updateStatus, deletePartners, loading, error, load])
 
   return <DeliveryCtx.Provider value={value}>{children}</DeliveryCtx.Provider>
 }

@@ -63,10 +63,51 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState('monthly')
-  const { analytics } = useAdminData()
+  const { analytics, loading } = useAdminData()
   const kpiSummary = analytics?.kpiSummary || []
   const topProducts = analytics?.topProducts || []
   const topCategories = analytics?.topCategories || []
+
+  if (loading) {
+    return (
+      <div className="space-y-5">
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+          <div className="flex flex-wrap items-center gap-3">
+            <div>
+              <h1 className="font-serif-display text-2xl font-bold text-dark tracking-tight">Analytics</h1>
+              <p className="text-xs text-dark/45 mt-0.5">Comprehensive business intelligence dashboard</p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Skeleton chart placeholders */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-24 rounded-2xl bg-black/4 animate-pulse" />)}
+        </div>
+        <div className="grid lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 h-72 rounded-3xl bg-black/4 animate-pulse" />
+          <div className="h-72 rounded-3xl bg-black/4 animate-pulse" />
+        </div>
+        <div className="grid lg:grid-cols-2 gap-5">
+          <div className="h-64 rounded-3xl bg-black/4 animate-pulse" />
+          <div className="h-64 rounded-3xl bg-black/4 animate-pulse" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!analytics) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center max-w-sm">
+          <span className="w-16 h-16 mx-auto rounded-3xl bg-primary/8 flex items-center justify-center"><BarChart3 className="w-8 h-8 text-primary" /></span>
+          <h3 className="mt-5 font-serif-display text-xl font-bold text-dark">No analytics available</h3>
+          <p className="mt-1.5 text-sm text-dark/45 font-light">Analytics data will appear here once orders start flowing.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -194,7 +235,7 @@ export default function AnalyticsPage() {
         <ChartCard title="Top Selling Products" subtitle="By units sold this month" delay={0.25}>
           <div className="space-y-3">
             {topProducts.slice(0, 6).map((p, i) => {
-              const maxSold = topProducts[0].sold
+              const maxSold = topProducts[0]?.sold || 1
               const pct = (p.sold / maxSold) * 100
               return (
                 <div key={p.name} className="flex items-center gap-3">

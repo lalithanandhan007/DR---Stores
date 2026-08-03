@@ -1,12 +1,12 @@
-import { Leaf, CheckCircle2 } from 'lucide-react'
+import { Leaf } from 'lucide-react'
 import { inr, formatDateTime } from '../../utils/format'
+import PaymentStatusBadge from '../ui/PaymentStatusBadge'
 
 /* Premium invoice card. `id="invoice-print"` is the print target — the
    @media print rules in index.css hide everything else on the page. */
 export default function InvoicePreview({ order }) {
   if (!order) return null
 
-  const payStatus = order.payment?.status === 'paid' || order.payment?.status === 'cod'
   const rows = [
     { label: 'Subtotal', value: order.subtotal },
     { label: 'Discount', value: -order.discount, muted: !!order.discount },
@@ -95,9 +95,7 @@ export default function InvoicePreview({ order }) {
         <div className="space-y-2 text-sm">
           <p className="flex items-center justify-between gap-3 text-dark/60"><span className="text-xs">Payment method</span><span className="font-semibold text-dark">{order.payment?.method}</span></p>
           <p className="flex items-center justify-between gap-3 text-dark/60"><span className="text-xs">Payment status</span>
-            <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${payStatus ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
-              {payStatus ? <CheckCircle2 className="w-3 h-3" /> : null} {order.payment?.status === 'cod' ? 'Cash on Delivery' : order.payment?.status === 'paid' ? 'Paid' : order.payment?.status}
-            </span>
+            <PaymentStatusBadge status={order.payment?.status} />
           </p>
           {order.payment?.ref && (
             <p className="flex items-center justify-between gap-3 text-dark/60"><span className="text-xs">Transaction</span><span className="font-mono text-[11px] font-semibold text-dark/70">{order.payment.ref}</span></p>

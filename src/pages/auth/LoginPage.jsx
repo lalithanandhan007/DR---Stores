@@ -1,24 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Smartphone, Mail, ArrowRight, Check, UserRound } from 'lucide-react'
 import AuthShell from '../../components/auth/AuthShell'
 import AuthHeader from '../../components/auth/AuthHeader'
 import { Field, PasswordField } from '../../components/auth/Field'
-import GoogleButton from '../../components/auth/GoogleButton'
 import { LoadingButton } from '../../components/auth/GoogleButton'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/CartContext'
-import { ROLES } from '../../context/AuthContext'
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+/* Prevent redirect loops: if the user was bounced here from /admin,
+   drop the admin destination and go home instead. */
+function sanitizeFrom(from) {
+  if (!from || from.startsWith('/admin')) return '/'
+  return from
+}
+
 export default function LoginPage() {
-  const { login, sendOtp, findAccount, loginWithPassword, continueAsGuest } = useAuth()
+  const { sendOtp, loginWithPassword, continueAsGuest } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from || '/'
+  const from = sanitizeFrom(location.state?.from || '/')
 
   const [mode, setMode] = useState('otp')
   const [phone, setPhone] = useState('')
@@ -29,11 +34,16 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false)
   const [success, setSuccess] = useState(false)
 
-  const finishLogin = (user, userRole = ROLES.CUSTOMER) => {
-    login(user, userRole)
-    addToast(`Welcome back, ${user.name.split(' ')[0]}! 👋`, 'success', 3500)
-    setSuccess(true)
-    setTimeout(() => navigate(from, { replace: true }), 1200)
+  /* Show session expiry message */
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('expired')) {
+      addToast('Your session has expired. Please log in again.', 'info', 4000)
+    }
+  }, [location.search, addToast])
+
+  const postLoginRedirect = (userRole) => {
+    const dest = userRole === 'admin' ? '/admin/dashboard' : from
+    setTimeout(() => navigate(dest, { replace: true }), 1200)
   }
 
   /* ---------- Mobile + OTP ---------- */
@@ -47,7 +57,7 @@ export default function LoginPage() {
       sendOtp(`+91 ${phone}`, 'login')
       addToast(`OTP sent to +91 ${phone}`, 'info', 3000)
       setBusy(false)
-      navigate('/verify-otp', { state: { identifier: `+91 ${phone}`, purpose: 'login' } })
+      navigate('/verify-otp', { state: { identifier: `+91 ${phone}`, purpose: 'login', from } })
     }, 1200)
   }
 
@@ -68,28 +78,12 @@ export default function LoginPage() {
     if (result.success) {
       addToast(`Welcome back, ${result.user.name.split(' ')[0]}! 👋`, 'success', 3500)
       setSuccess(true)
-      setTimeout(() => navigate(from, { replace: true }), 1200)
+      postLoginRedirect(result.user.role)
     } else {
       const isPw = /password|credentials/i.test(result.message)
       setErrors(isPw ? { password: result.message } : { email: result.message })
       addToast(result.message, 'error', 3200)
     }
-  }
-
-  /* ---------- Google (simulated) ---------- */
-  const handleGoogle = () => {
-    setBusy(true)
-    setTimeout(() => {
-      setBusy(false)
-      finishLogin({
-        id: 'usr_google_demo',
-        name: 'Google Customer',
-        email: 'google.user@example.com',
-        phone: '',
-        avatar: null,
-        memberSince: new Date().toISOString(),
-      })
-    }, 1400)
   }
 
   const handleGuest = () => {
@@ -218,17 +212,11 @@ export default function LoginPage() {
           )}
         </AnimatePresence>
 
-        {/* Divider */}
-        <div className="flex items-center gap-4 my-6">
-          <span className="flex-1 h-px bg-black/8" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-dark/30">or continue with</span>
-          <span className="flex-1 h-px bg-black/8" />
+        <div className="mt-6">
+          <button onClick={handleGuest} className="w-full h-11 rounded-2xl text-sm font-semibold text-dark/55 hover:text-primary border border-dashed border-black/15 hover:border-primary/40 transition-all duration-300 flex items-center justify-center gap-2">
+            <UserRound className="w-4 h-4" /> Continue as Guest
+          </button>
         </div>
-
-        <GoogleButton onLogin={handleGoogle} />
-        <button onClick={handleGuest} className="mt-3 w-full h-11 rounded-2xl text-sm font-semibold text-dark/55 hover:text-primary border border-dashed border-black/15 hover:border-primary/40 transition-all duration-300 flex items-center justify-center gap-2">
-          <UserRound className="w-4 h-4" /> Continue as Guest
-        </button>
       </div>
 
       <p className="mt-6 text-center text-sm text-dark/45">

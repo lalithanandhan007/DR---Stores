@@ -6,8 +6,8 @@ import {
   Ban, Phone, Mail, MapPin, Wallet, MessageSquare, ClipboardList, StickyNote, Clock,
   Sparkles, RefreshCcw, History, AlertCircle, Send,
 } from 'lucide-react'
-import { customerStats } from '../../data/ordersData'
 import { useOrders } from '../../context/OrdersContext'
+import { useCustomers } from '../../context/CustomersContext'
 import { useToast } from '../../context/CartContext'
 import OrderStatusBadge from '../../components/orders/OrderStatusBadge'
 import PaymentBadge from '../../components/orders/PaymentBadge'
@@ -56,15 +56,27 @@ function Card({ title, subtitle, action, children, delay = 0 }) {
 export default function OrderDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { getOrder, updateStatus, addNote } = useOrders()
+  const { getOrder, updateStatus, addNote, loading } = useOrders()
+  const { getCustomer } = useCustomers()
   const { addToast } = useToast()
   const order = getOrder(id)
+  const customerProfile = order ? getCustomer(order.customer._id) : null
 
   const [confirm, setConfirm] = useState(null) // { action: 'cancel' | 'reject' | 'refund' }
   const [assignOpen, setAssignOpen] = useState(false)
   const [noteText, setNoteText] = useState('')
 
   useEffect(() => { window.scrollTo(0, 0) }, [id])
+
+  if (loading) {
+    return (
+      <div className="space-y-5">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="h-40 rounded-3xl bg-black/4 animate-pulse" />
+        ))}
+      </div>
+    )
+  }
 
   if (!order) {
     return (
@@ -81,7 +93,6 @@ export default function OrderDetailPage() {
     )
   }
 
-  const stats = customerStats[order.customer._id] || { totalOrders: 1, lifetimeSpend: order.grandTotal }
   const actions = STATUS_ACTIONS[order.status] || []
   const canCancel = !['delivered', 'cancelled', 'refunded'].includes(order.status)
   const canRefund = order.status === 'cancelled' && (order.payment.status === 'paid' || order.payment.status === 'pending')
@@ -279,11 +290,11 @@ export default function OrderDetailPage() {
             <div className="mt-4 grid grid-cols-2 gap-2.5">
               <div className="rounded-2xl bg-cream p-3">
                 <div className="flex items-center gap-1.5 text-dark/40"><History className="w-3.5 h-3.5" /><span className="text-[10px] font-bold uppercase tracking-wider">Previous Orders</span></div>
-                <p className="mt-1 text-xl font-black text-dark">{stats.totalOrders}</p>
+                <p className="mt-1 text-xl font-black text-dark">{customerProfile?.totalOrders ?? 'N/A'}</p>
               </div>
               <div className="rounded-2xl bg-cream p-3">
                 <div className="flex items-center gap-1.5 text-dark/40"><Wallet className="w-3.5 h-3.5" /><span className="text-[10px] font-bold uppercase tracking-wider">Lifetime Spend</span></div>
-                <p className="mt-1 text-xl font-black text-primary">{inr(stats.lifetimeSpend)}</p>
+                <p className="mt-1 text-xl font-black text-primary">{customerProfile ? inr(customerProfile.lifetimeSpend) : 'N/A'}</p>
               </div>
             </div>
 

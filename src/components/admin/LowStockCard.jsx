@@ -26,7 +26,7 @@ export default function LowStockCard() {
             transition={{ duration: 0.4, delay: i * 0.05 }}
             className="bg-white rounded-3xl border border-black/5 shadow-soft p-4 flex items-center gap-3.5 hover:shadow-card transition-shadow"
           >
-            <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `linear-gradient(135deg, ${p.gradient[0]}22, ${p.gradient[1]}14)` }}>
+            <span className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `linear-gradient(135deg, ${p.gradient?.[0] || '#4CAF50'}22, ${p.gradient?.[1] || '#2E7D32'}14)` }}>
               <span className="text-2xl">{p.emoji}</span>
             </span>
             <div className="flex-1 min-w-0">

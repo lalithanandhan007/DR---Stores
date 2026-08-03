@@ -4,7 +4,7 @@ import {
   Search, Filter, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, X,
   MoreHorizontal, Phone, Truck, Star, Clock, Package, Eye, CheckCircle2, ToggleLeft, ToggleRight,
 } from 'lucide-react'
-import { DELIVERY_STATUSES, getDeliveryStatusMeta, deliveryPerformance } from '../../data/deliveryData'
+import { DELIVERY_STATUSES, getDeliveryStatusMeta } from '../../data/deliveryData'
 import { useDelivery } from '../../context/DeliveryContext'
 import { useToast } from '../../context/CartContext'
 import { inr, timeAgo } from '../../utils/format'
@@ -88,7 +88,7 @@ function RowActions({ partner, onAction }) {
 
 /* ================= MAIN PAGE ================= */
 export default function DeliveryPage() {
-  const { partners, toggleOnline } = useDelivery()
+  const { partners, toggleOnline, loading } = useDelivery()
   const { addToast } = useToast()
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ status: '' })
@@ -104,6 +104,19 @@ export default function DeliveryPage() {
     for (const p of partners) { c[p.status] = (c[p.status] || 0) + 1; c.totalDeliveries += p.totalDeliveries }
     c.onTimePct = Math.round(partners.reduce((s, p) => s + p.onTimePercentage, 0) / partners.length)
     return c
+  }, [partners])
+
+  /* Weekly performance — derived from live partner data (todayDeliveries as proxy).
+     Shown as a 7-day snapshot; when there is no delivery data yet we show a placeholder message. */
+  const weeklyPerformance = useMemo(() => {
+    const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const total = partners.reduce((s, p) => s + (p.todayDeliveries || 0), 0)
+    if (!partners.length || total === 0) return []
+    const onTime = partners.reduce((s, p) => s + Math.round(((p.todayDeliveries || 0) * (p.onTimePercentage || 0)) / 100), 0)
+    return DAYS.map((day) => {
+      const delivered = Math.max(1, Math.round(total / DAYS.length))
+      return { day, delivered, onTime: Math.max(1, Math.round(onTime / DAYS.length)) }
+    })
   }, [partners])
 
   const filtered = useMemo(() => {
@@ -158,9 +171,14 @@ export default function DeliveryPage() {
             <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-dark/45"><span className="w-2 h-2 rounded-full bg-emerald-400" /> On Time</span>
           </div>
         </div>
+        {weeklyPerformance.length === 0 ? (
+          <div className="flex items-center justify-center h-40 text-sm text-dark/45 font-light">
+            Performance data available after first week of operations
+          </div>
+        ) : (
         <div className="flex items-end gap-3 h-40">
-          {deliveryPerformance.map((d, i) => {
-            const maxVal = Math.max(...deliveryPerformance.map((x) => x.delivered))
+          {weeklyPerformance.map((d, i) => {
+            const maxVal = Math.max(...weeklyPerformance.map((x) => x.delivered))
             const h1 = (d.delivered / maxVal) * 100
             const h2 = (d.onTime / maxVal) * 100
             return (
@@ -177,6 +195,7 @@ export default function DeliveryPage() {
             )
           })}
         </div>
+        )}
       </motion.div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -200,6 +219,14 @@ export default function DeliveryPage() {
       </div>
 
       <div className="bg-white rounded-3xl border border-black/5 shadow-soft overflow-hidden">
+        {loading ? (
+          <div className="p-5 space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-14 rounded-xl bg-black/4 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+        <>
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[1100px]">
             <thead>
@@ -266,6 +293,8 @@ export default function DeliveryPage() {
             <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages} className="w-8 h-8 rounded-xl flex items-center justify-center text-dark/30 hover:bg-primary/8 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* Partner detail modal */}

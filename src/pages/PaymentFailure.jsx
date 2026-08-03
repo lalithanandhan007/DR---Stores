@@ -1,9 +1,34 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, RefreshCw, CreditCard, ArrowLeft, ShieldAlert } from 'lucide-react'
+import { X, RefreshCw, ArrowLeft, ShieldAlert } from 'lucide-react'
 import Footer from '../components/Footer'
 
 export default function PaymentFailure() {
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+
+  // Get error data from either router state or URL query params
+  const state = location.state || {}
+  const orderId = state.orderId || searchParams.get('orderId') || null
+  const errorMsg = state.error || searchParams.get('error') || 'Payment failed'
+  const amount = state.amount || parseFloat(searchParams.get('amount') || '0') || 0
+  const errorCode = state.code || searchParams.get('code') || null
+
+  const [retrying, setRetrying] = useState(false)
+
+  const handleRetry = () => {
+    setRetrying(true)
+    if (orderId) {
+      // Navigate to checkout with orderId to resume payment
+      navigate('/checkout', { state: { retryOrderId: orderId } })
+    } else {
+      navigate('/checkout')
+    }
+    setRetrying(false)
+  }
+
   return (
     <div className="min-h-screen bg-cream pt-28">
       <div className="max-w-lg mx-auto px-5 sm:px-8 text-center">
@@ -52,9 +77,26 @@ export default function PaymentFailure() {
             <ShieldAlert className="w-6 h-6 text-red-500" />
             <div className="text-left">
               <p className="text-sm font-bold text-red-700">Transaction could not be completed</p>
-              <p className="text-xs text-red-500/70 mt-0.5">No amount has been deducted from your account</p>
+              <p className="text-xs text-red-500/70 mt-0.5">{errorMsg} · No amount has been deducted from your account</p>
+              {errorCode && <p className="text-[10px] text-red-500/50 mt-1">Error code: {errorCode}</p>}
             </div>
           </div>
+          {(amount > 0 || orderId) && (
+            <div className="mt-3 pt-3 border-t border-red-200/60 space-y-1.5">
+              {amount > 0 && (
+                <p className="flex items-center justify-between text-xs">
+                  <span className="text-red-500/80 font-semibold">Amount</span>
+                  <span className="text-red-600 font-bold">₹{amount}</span>
+                </p>
+              )}
+              {orderId && (
+                <p className="flex items-center justify-between text-xs">
+                  <span className="text-red-500/80 font-semibold">Order ID</span>
+                  <span className="text-red-600 font-bold">{orderId}</span>
+                </p>
+              )}
+            </div>
+          )}
         </motion.div>
 
         {/* Actions */}
@@ -67,9 +109,22 @@ export default function PaymentFailure() {
           <Link to="/checkout" className="flex-1 h-13 rounded-2xl border-2 border-black/10 text-sm font-bold text-dark/70 flex items-center justify-center gap-2 hover:border-dark/25 transition-all">
             <ArrowLeft className="w-4 h-4" /> Go Back
           </Link>
-          <Link to="/checkout" className="flex-1 h-13 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-            <RefreshCw className="w-4 h-4" /> Retry Payment
-          </Link>
+          <button
+            onClick={handleRetry}
+            disabled={retrying}
+            className="flex-1 h-13 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-60"
+          >
+            {retrying ? (
+              <>
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-4 h-4 border-3 border-white border-t-transparent rounded-full" />
+                Retrying...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" /> Retry Payment
+              </>
+            )}
+          </button>
         </motion.div>
 
         <motion.p

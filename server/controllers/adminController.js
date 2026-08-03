@@ -163,3 +163,24 @@ export const getAnalytics = asyncHandler(async (req, res) => {
 export const getReports = asyncHandler(async (req, res) => {
   res.json(ApiResponse.success({ message: 'Reports generated from live data' }));
 });
+
+/* Expire unpaid online orders older than 30 minutes */
+export const expireUnpaidOrders = asyncHandler(async (req, res) => {
+  const { Inventory, StockHistory } = await import('../models/Inventory.js');
+  const cutoff = new Date(Date.now() - 30 * 60 * 1000);
+  const expired = await Order.find({
+    'payment.status': 'pending',
+    'payment.gateway': 'razorpay',
+    createdAt: { $lt: cutoff },
+  });
+
+  for (const order of expired) {
+    order.payment.status = 'expired';
+    order.payment.failedReason = 'Payment timed out (30 minutes)';
+    order.status = 'cancelled';
+    order.timeline.push({ status: 'cancelled', label: 'Order Expired — Payment Timeout', time: new Date(), actor: 'System' });
+    await order.save();
+  }
+
+  res.json(ApiResponse.success({ expired: expired.length }, 'Expired unpaid orders'));
+});

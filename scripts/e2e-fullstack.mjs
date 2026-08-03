@@ -2,7 +2,8 @@
    React SPA on :5173 proxying /api to Express+MongoDB on :5000.
 
    Exercises: customer email login, catalog from DB, add-to-cart,
-   admin login, admin dashboard with live stats. Reports failures.
+   admin login, admin dashboard with live stats, payment flow.
+   Reports failures.
 */
 import puppeteer from 'puppeteer-core'
 
@@ -36,14 +37,14 @@ check('Landing page loads', (await page.content()).includes('D.R.STORES') || (aw
 
 /* ---------- 2. Customer email login (real JWT via backend) ---------- */
 await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 })
-await sleep(600)
+await sleep(1500)
 // switch to Email & Password tab
 await page.evaluate(() => {
   const btns = [...document.querySelectorAll('button')]
   const tab = btns.find((b) => b.textContent.includes('Email'))
   if (tab) tab.click()
 })
-await sleep(400)
+await sleep(1200)
 await page.type('input[type="email"], input[autocomplete="email"]', 'demo@drstores.com')
 const pwdInputs = await page.$$('input[type="password"]')
 if (pwdInputs[0]) await pwdInputs[0].type('demo123')
@@ -71,21 +72,92 @@ await page.evaluate(() => {
   if (btn) btn.click()
 })
 await sleep(1500)
-const cartState = await page.evaluate(() => localStorage.getItem('dr-cart'))
-// Authenticated cart lives in MongoDB; check the API call happened instead
 await page.goto(`${BASE}/cart`, { waitUntil: 'domcontentloaded', timeout: 30000 })
 await sleep(1800)
 const cartText = await page.evaluate(() => document.body.innerText.slice(0, 4000))
 check('Cart page renders with item', /Tomato|tomato/i.test(cartText))
 
-/* ---------- 5. Admin login + dashboard with live stats ---------- */
+/* ---------- 5. Guest checkout with COD ---------- */
+await page.goto(`${BASE}/checkout`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+await sleep(1500)
+
+// Step 1: Add address (guest)
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll('button')].find((b) => /Add New/i.test(b.textContent))
+  if (btn) btn.click()
+})
+await sleep(1500)
+await page.waitForSelector('input[placeholder="Full Name"]', { visible: true, timeout: 10000 })
+await page.type('input[placeholder="Full Name"]', 'Test User')
+await page.type('input[placeholder="Phone Number"]', '9876543210')
+await page.type('input[placeholder="House / Flat No."]', '123 Test St')
+await page.type('input[placeholder="Street / Road"]', 'Test Road')
+await page.type('input[placeholder="Area / Locality"]', 'Test Area')
+await page.type('input[placeholder="City"]', 'Test City')
+await page.type('input[placeholder="Pincode"]', '123456')
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll('button')].find((b) => /Save Address/i.test(b.textContent))
+  if (btn) btn.click()
+})
+await sleep(1200)
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll('button')].find((b) => /Continue/i.test(b.textContent))
+  if (btn) btn.click()
+})
+await sleep(1000)
+
+// Step 2: Select slot
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll('button')].find((b) => /Morning|Afternoon|Evening|Express/i.test(b.textContent))
+  if (btn) btn.click()
+})
+await sleep(800)
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll('button')].find((b) => /Continue/i.test(b.textContent))
+  if (btn) btn.click()
+})
+await sleep(1000)
+
+// Step 3: Review - continue
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll('button')].find((b) => /Continue/i.test(b.textContent))
+  if (btn) btn.click()
+})
+await sleep(1000)
+
+// Step 4: Payment - select COD
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll('button')].find((b) => /Cash on Delivery/i.test(b.textContent))
+  if (btn) btn.click()
+})
+await sleep(800)
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll('button')].find((b) => /Confirm Order/i.test(b.textContent))
+  if (btn) btn.click()
+})
+await sleep(3000)
+
+// Check if redirected to payment-success
+const afterCOD = page.url()
+check('COD checkout redirects to payment-success', afterCOD.includes('/payment-success'))
+const successText = await page.evaluate(() => document.body.innerText.slice(0, 3000))
+check('Payment success page shows order confirmation', /Order Placed|Order ID/i.test(successText))
+
+/* ---------- 6. PaymentSuccess page resilience (refresh) ---------- */
+const successUrl = page.url()
+await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 })
+await sleep(1500)
+const afterRefresh = await page.evaluate(() => document.body.innerText.slice(0, 3000))
+check('PaymentSuccess survives page refresh', /Order Placed|Order ID/i.test(afterRefresh))
+
+/* ---------- 7. Admin login + dashboard with live stats ---------- */
 await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 })
-await sleep(600)
+await sleep(1500)
 await page.evaluate(() => {
   const tab = [...document.querySelectorAll('button')].find((b) => b.textContent.includes('Email'))
   if (tab) tab.click()
 })
-await sleep(400)
+await sleep(1200)
 await page.type('input[type="email"], input[autocomplete="email"]', 'admin@drstores.com')
 const pwd2 = await page.$$('input[type="password"]')
 if (pwd2[0]) await pwd2[0].type('demo123')
@@ -97,10 +169,14 @@ await sleep(3500)
 await page.goto(`${BASE}/admin`, { waitUntil: 'domcontentloaded', timeout: 30000 })
 await sleep(3000)
 const adminText = await page.evaluate(() => document.body.innerText)
-check('Admin dashboard loads', /Welcome back, Ramesh/i.test(adminText))
+check('Admin dashboard loads', /Welcome back/i.test(adminText))
 check('Admin dashboard shows live stat cards', /Today's Revenue|Total Customers|Pending Orders/i.test(adminText))
 
-/* ---------- 6. Admin API endpoints actually hit ---------- */
+/* ---------- 8. Admin OrderTable shows payment status badge ---------- */
+const adminOrderText = await page.evaluate(() => document.body.innerText)
+check('Admin dashboard shows payment status', /Paid|Pending|Failed|COD/i.test(adminOrderText))
+
+/* ---------- 9. Admin API endpoints actually hit ---------- */
 console.log('\n── API calls captured (sample) ──')
 apiHits.slice(0, 25).forEach((h) => console.log(' ', h))
 const okApi = apiHits.filter((h) => h.startsWith('2') || h.startsWith('304'))

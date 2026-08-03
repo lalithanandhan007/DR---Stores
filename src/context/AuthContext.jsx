@@ -1,13 +1,12 @@
-import { createContext, useContext, useCallback, useState, useEffect } from 'react'
+import { createContext, useContext, useCallback, useState, useEffect, useRef } from 'react'
 import { authApi, wishlistApi } from '../api'
 import { getErrorMessage } from '../api/client'
 
 /* ====================================================================
    D.R.STORES — Auth, Roles & Wishlist
-   Sessions are now backed by the Express + MongoDB API (JWT). The OTP
-   "SMS" is simulated (no SMS provider) but the OTP is generated &
-   verified by the backend for login/reset flows, and registration
-   writes a real User document to MongoDB.
+   Sessions are backed by the Express + MongoDB API (JWT). No demo
+   or simulation code remains — all login / register / logout /
+   token validation goes through the backend.
    ==================================================================== */
 
 export const ROLES = {
@@ -26,15 +25,8 @@ const STORAGE_KEYS = {
   user: 'dr-user',
   role: 'dr-role',
   token: 'dr-token',
-  accounts: 'dr-accounts',
-  pendingOtp: 'dr-pending-otp',
-  pendingRegistration: 'dr-pending-registration',
-  settings: 'dr-settings',
-  wishlist: 'dr-wishlist',
+  rememberEmail: 'dr-remember-email',
 }
-
-/* Demo account so email+password login works out of the box */
-const DEMO_ACCOUNT = { name: 'Demo Customer', email: 'demo@drstores.com', phone: '9876543210', password: 'demo123' }
 
 function readJson(key, fallback) {
   try {
@@ -64,14 +56,19 @@ const AuthCtx = createContext(null)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readJson(STORAGE_KEYS.user, null))
   const [role, setRole] = useState(() => localStorage.getItem(STORAGE_KEYS.role) || ROLES.CUSTOMER)
+  const [authLoading, setAuthLoading] = useState(true)
+
+  const pendingRegRef = useRef(null)
+  const pendingOtpRef = useRef(null)
+  const [, setOtpTick] = useState(0)
 
   const persistUser = useCallback((nextUser, nextRole) => {
     const normalized = normalizeUser(nextUser)
     setUser(normalized)
-    setRole(nextRole)
+    setRole(nextUser?.role || nextRole || ROLES.CUSTOMER)
     if (normalized) writeJson(STORAGE_KEYS.user, normalized)
     else localStorage.removeItem(STORAGE_KEYS.user)
-    if (nextRole) localStorage.setItem(STORAGE_KEYS.role, nextRole)
+    if (nextUser?.role || nextRole) localStorage.setItem(STORAGE_KEYS.role, nextUser?.role || nextRole)
     else localStorage.removeItem(STORAGE_KEYS.role)
   }, [])
 
@@ -80,10 +77,11 @@ export function AuthProvider({ children }) {
     if (token) localStorage.setItem(STORAGE_KEYS.token, token)
   }, [persistUser])
 
-  /* Hydrate a real session from the JWT on first load */
+  /* Hydrate from JWT on mount — always verify against backend even if
+     localStorage has a cached user, so stale roles / names are corrected. */
   useEffect(() => {
     const token = localStorage.getItem(STORAGE_KEYS.token)
-    if (token && !user) {
+    if (token) {
       authApi.getMe()
         .then(({ user: fetched }) => {
           persistUser(fetched, fetched.role)
@@ -92,15 +90,14 @@ export function AuthProvider({ children }) {
           localStorage.removeItem(STORAGE_KEYS.token)
           persistUser(null, null)
         })
+        .finally(() => setAuthLoading(false))
+    } else {
+      setAuthLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /* ---------- Session ---------- */
-  const login = useCallback((userData, userRole = ROLES.CUSTOMER) => {
-    persistUser(userData, userRole)
-  }, [persistUser])
-
   const logout = useCallback(() => {
     authApi.logout().catch(() => {})
     localStorage.removeItem(STORAGE_KEYS.token)
@@ -137,35 +134,15 @@ export function AuthProvider({ children }) {
     }
   }, [persistSession])
 
-  const updateProfile = useCallback((patch) => {
-    setUser((prev) => {
-      const next = { ...prev, ...patch }
-      writeJson(STORAGE_KEYS.user, next)
-      return next
-    })
-    authApi.updateProfile(patch)
-      .then(({ user: fetched }) => { persistUser(fetched, fetched.role) })
-      .catch(() => {})
+  const updateProfile = useCallback(async (patch) => {
+    try {
+      const { user: fetched } = await authApi.updateProfile(patch)
+      persistUser(fetched, fetched.role)
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: getErrorMessage(err, 'Profile update failed') }
+    }
   }, [persistUser])
-
-  /* ---------- Accounts (local mirror for the demo/simulation UX) ---------- */
-  const getAccounts = useCallback(() => {
-    const accounts = readJson(STORAGE_KEYS.accounts, [])
-    if (!accounts.some((a) => a.email === DEMO_ACCOUNT.email)) accounts.unshift(DEMO_ACCOUNT)
-    return accounts
-  }, [])
-
-  const saveAccount = useCallback((account) => {
-    const accounts = readJson(STORAGE_KEYS.accounts, [])
-    const idx = accounts.findIndex((a) => a.email === account.email)
-    if (idx >= 0) accounts[idx] = account
-    else accounts.push(account)
-    writeJson(STORAGE_KEYS.accounts, accounts)
-  }, [])
-
-  const findAccount = useCallback((email) => {
-    return getAccounts().find((a) => a.email.toLowerCase() === email.toLowerCase()) || null
-  }, [getAccounts])
 
   const resetPassword = useCallback(async (identifier, newPassword) => {
     try {
@@ -178,29 +155,30 @@ export function AuthProvider({ children }) {
 
   /* ---------- Registration (pending until OTP verified) ---------- */
   const stageRegistration = useCallback((data) => {
-    writeJson(STORAGE_KEYS.pendingRegistration, data)
+    pendingRegRef.current = data
   }, [])
 
   const consumeRegistration = useCallback(() => {
-    const pending = readJson(STORAGE_KEYS.pendingRegistration, null)
-    localStorage.removeItem(STORAGE_KEYS.pendingRegistration)
+    const pending = pendingRegRef.current
+    pendingRegRef.current = null
     return pending
   }, [])
 
   /* ---------- OTP ----------
-     No real SMS provider, so the code is shown as a "demo OTP". For
-     login/reset the backend also generates & stores a real OTP on the
-     user document so verification is database-backed. */
+     For login/reset the backend generates & stores a real OTP.
+     For registration the OTP is simulated (no SMS provider). */
   const sendOtp = useCallback((identifier, purpose) => {
     const otp = String(Math.floor(100000 + Math.random() * 900000))
     const pending = { otp, identifier, purpose, expiresAt: Date.now() + 5 * 60 * 1000 }
-    writeJson(STORAGE_KEYS.pendingOtp, pending)
+    pendingOtpRef.current = pending
+    setOtpTick((t) => t + 1)
     if (purpose !== 'register') {
       authApi.forgotPassword(identifier)
         .then((res) => {
           if (res?.otp) {
             pending.otp = res.otp
-            writeJson(STORAGE_KEYS.pendingOtp, pending)
+            pendingOtpRef.current = pending
+            setOtpTick((t) => t + 1)
           }
         })
         .catch(() => {})
@@ -210,16 +188,18 @@ export function AuthProvider({ children }) {
 
   const verifyOtp = useCallback(async (identifier, code, purpose = 'login') => {
     if (purpose === 'register') {
-      const pending = readJson(STORAGE_KEYS.pendingOtp, null)
+      const pending = pendingOtpRef.current
       if (!pending) return { success: false, message: 'No OTP requested. Please request a new one.' }
       if (Date.now() > pending.expiresAt) return { success: false, message: 'OTP expired. Please request a new one.' }
       if (code !== pending.otp) return { success: false, message: 'Incorrect OTP. Please try again.' }
-      localStorage.removeItem(STORAGE_KEYS.pendingOtp)
+      pendingOtpRef.current = null
+      setOtpTick((t) => t + 1)
       return { success: true }
     }
     try {
       await authApi.verifyOtp(identifier, code, purpose)
-      localStorage.removeItem(STORAGE_KEYS.pendingOtp)
+      pendingOtpRef.current = null
+      setOtpTick((t) => t + 1)
       return { success: true }
     } catch (err) {
       return { success: false, message: getErrorMessage(err, 'Verification failed') }
@@ -229,19 +209,19 @@ export function AuthProvider({ children }) {
   /* Guest — no account created, just browsing */
   const continueAsGuest = useCallback(() => {}, [])
 
+  const pendingOtpPreview = pendingOtpRef.current?.otp || null
+
   const value = {
     user,
     role,
+    authLoading,
+    pendingOtpPreview,
     isAuthenticated: !!user,
-    login,
     logout,
     loginWithPassword,
     loginWithOtp,
     register,
     updateProfile,
-    getAccounts,
-    saveAccount,
-    findAccount,
     stageRegistration,
     consumeRegistration,
     sendOtp,
@@ -266,7 +246,7 @@ const WishlistCtx = createContext(null)
 
 export function WishlistProvider({ children }) {
   const { isAuthenticated } = useAuth()
-  const [wishlist, setWishlist] = useState(() => readJson(STORAGE_KEYS.wishlist, []))
+  const [wishlist, setWishlist] = useState([])
 
   /* Load from backend whenever the session changes */
   useEffect(() => {
@@ -274,7 +254,6 @@ export function WishlistProvider({ children }) {
     wishlistApi.get()
       .then((items) => {
         setWishlist(items || [])
-        writeJson(STORAGE_KEYS.wishlist, items || [])
       })
       .catch(() => {})
   }, [isAuthenticated])
@@ -284,30 +263,22 @@ export function WishlistProvider({ children }) {
     try {
       const items = await wishlistApi.toggle(productId)
       setWishlist(items || [])
-      writeJson(STORAGE_KEYS.wishlist, items || [])
     } catch {
       // fall back to optimistic local toggle
       setWishlist((prev) => {
         const exists = prev.some((p) => (p.id || p._id) === productId)
-        const next = exists ? prev.filter((p) => (p.id || p._id) !== productId) : [{ ...product, addedAt: Date.now() }, ...prev]
-        writeJson(STORAGE_KEYS.wishlist, next)
-        return next
+        return exists ? prev.filter((p) => (p.id || p._id) !== productId) : [{ ...product, addedAt: Date.now() }, ...prev]
       })
     }
   }, [])
 
   const removeFromWishlist = useCallback(async (id) => {
-    setWishlist((prev) => {
-      const next = prev.filter((p) => (p.id || p._id) !== id)
-      writeJson(STORAGE_KEYS.wishlist, next)
-      return next
-    })
+    setWishlist((prev) => prev.filter((p) => (p.id || p._id) !== id))
     try { await wishlistApi.remove(id) } catch { /* ignore */ }
   }, [])
 
   const clearWishlist = useCallback(async () => {
     setWishlist([])
-    writeJson(STORAGE_KEYS.wishlist, [])
     try { await wishlistApi.clear() } catch { /* ignore */ }
   }, [])
 
@@ -332,19 +303,22 @@ export function useWishlist() {
 const SettingsCtx = createContext(null)
 
 export function SettingsProvider({ children }) {
-  const { isAuthenticated } = useAuth()
-  const [settings, setSettings] = useState(() => readJson(STORAGE_KEYS.settings, {
+  const { isAuthenticated, user } = useAuth()
+  const [settings, setSettings] = useState({
     notifications: { orders: true, offers: true, email: false },
     darkMode: false,
     language: 'en',
-  }))
+  })
+
+  /* Load settings from user profile when the user object changes */
+  useEffect(() => {
+    if (user?.settings) {
+      setSettings((prev) => ({ ...prev, ...user.settings }))
+    }
+  }, [user?.settings])
 
   const updateSettings = useCallback((patch) => {
-    setSettings((prev) => {
-      const next = { ...prev, ...patch }
-      writeJson(STORAGE_KEYS.settings, next)
-      return next
-    })
+    setSettings((prev) => ({ ...prev, ...patch }))
     /* persist to the user's settings in MongoDB when logged in */
     if (isAuthenticated) {
       authApi.updateProfile({ settings: patch }).catch(() => {})

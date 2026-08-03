@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDashboardStats, getWeeklyRevenue, getMonthlyRevenue, getOrderTrend, getCategoryDistribution, getTopProducts, getLowStock, getActivity, getAnalytics, getReports } from '../controllers/adminController.js';
+import { getDashboardStats, getWeeklyRevenue, getMonthlyRevenue, getOrderTrend, getCategoryDistribution, getTopProducts, getLowStock, getActivity, getAnalytics, getReports, expireUnpaidOrders } from '../controllers/adminController.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = Router();
@@ -15,5 +15,6 @@ router.get('/low-stock', getLowStock);
 router.get('/activity', getActivity);
 router.get('/analytics', getAnalytics);
 router.get('/reports', getReports);
+router.post('/expire-unpaid', expireUnpaidOrders);
 
 export default router;

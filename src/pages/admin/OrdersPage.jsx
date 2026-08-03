@@ -5,8 +5,9 @@ import {
   Search, Filter, Download, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, X,
   MoreHorizontal, Eye, Printer, Truck, Ban, Trash2, CheckCheck, Phone, Clock, Receipt,
 } from 'lucide-react'
-import { ORDER_STATUSES, PAYMENT_STATUSES, PAYMENT_METHODS, deliveryPartners } from '../../data/ordersData'
+import { ORDER_STATUSES, PAYMENT_STATUSES, PAYMENT_METHODS } from '../../data/ordersData'
 import { useOrders } from '../../context/OrdersContext'
+import { useDelivery } from '../../context/DeliveryContext'
 import { useToast } from '../../context/CartContext'
 import OrderStatusBadge from '../../components/orders/OrderStatusBadge'
 import PaymentBadge from '../../components/orders/PaymentBadge'
@@ -63,6 +64,7 @@ function KpiStrip({ counts, statusFilter, onSelect }) {
 
 /* ================= FILTER PANEL ================= */
 function FilterPanel({ open, onClose, filters, setFilters, onClear }) {
+  const { partners } = useDelivery()
   if (!open) return null
   const set = (k, v) => setFilters((f) => ({ ...f, [k]: v }))
 
@@ -108,7 +110,7 @@ function FilterPanel({ open, onClose, filters, setFilters, onClear }) {
             <label className="block text-xs font-bold text-dark/60 mb-2">Delivery Partner</label>
             <select value={filters.partner} onChange={(e) => set('partner', e.target.value)} className="w-full h-10 px-3 rounded-xl bg-cream border border-black/8 text-sm text-dark focus:outline-none focus:border-primary/30">
               <option value="">All partners</option>
-              {deliveryPartners.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
+              {partners.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
               <option value="unassigned">Not assigned</option>
             </select>
           </div>
@@ -210,7 +212,7 @@ function EmptyState({ searching }) {
 /* ================= MAIN PAGE ================= */
 export default function OrdersPage() {
   const navigate = useNavigate()
-  const { orders, updateStatus, bulkStatus, deleteOrders } = useOrders()
+  const { orders, loading, updateStatus, bulkStatus, deleteOrders } = useOrders()
   const { addToast } = useToast()
 
   const [search, setSearch] = useState('')
@@ -382,6 +384,14 @@ export default function OrdersPage() {
 
       {/* Table */}
       <div className="bg-white rounded-3xl border border-black/5 shadow-soft overflow-hidden">
+        {loading ? (
+          <div className="p-5 space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-14 rounded-xl bg-black/4 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+        <>
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[1280px]">
             <thead>
@@ -510,6 +520,8 @@ export default function OrdersPage() {
             <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages} className="w-8 h-8 rounded-xl flex items-center justify-center text-dark/30 hover:bg-primary/8 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
+        </>
+        )}
       </div>
 
       {/* Modals */}

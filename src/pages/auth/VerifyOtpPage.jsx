@@ -11,7 +11,7 @@ import { useToast } from '../../context/CartContext'
 const OTP_EXPIRY_SECONDS = 30
 
 export default function VerifyOtpPage() {
-  const { verifyOtp, sendOtp, consumeRegistration, register, loginWithOtp } = useAuth()
+  const { verifyOtp, sendOtp, consumeRegistration, register, loginWithOtp, pendingOtpPreview } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
@@ -29,14 +29,8 @@ export default function VerifyOtpPage() {
   const [sending, setSending] = useState(false)
   const timer = useRef(null)
 
-  /* Demo OTP preview (no backend — shows the "message" so flow is testable) */
-  const [demoOtp, setDemoOtp] = useState('')
-
+  /* Keep the countdown timer cleaned up on unmount */
   useEffect(() => {
-    try {
-      const pending = JSON.parse(localStorage.getItem('dr-pending-otp'))
-      if (pending?.otp) setDemoOtp(pending.otp)
-    } catch { /* ignore */ }
     return () => clearInterval(timer.current)
   }, [])
 
@@ -57,8 +51,7 @@ export default function VerifyOtpPage() {
     if (sending) return
     setSending(true)
     setTimeout(() => {
-      const pending = sendOtp(identifier, purpose)
-      if (pending) setDemoOtp(pending.otp)
+      sendOtp(identifier, purpose)
       startTimer()
       setError('')
       setCode('')
@@ -69,6 +62,7 @@ export default function VerifyOtpPage() {
 
   /* ---------- Post-verification routing by purpose ---------- */
   const complete = useCallback(async () => {
+    const dest = (user) => (user?.role === 'admin' ? '/admin/dashboard' : from)
     if (purpose === 'register') {
       const pending = consumeRegistration()
       if (pending) {
@@ -92,7 +86,7 @@ export default function VerifyOtpPage() {
         return
       }
       addToast(`Welcome back, ${res.user.name.split(' ')[0]}! 👋`, 'success', 3000)
-      navigate(from, { replace: true })
+      navigate(dest(res.user), { replace: true })
     }
   }, [purpose, consumeRegistration, register, loginWithOtp, identifier, navigate, from, addToast])
 
@@ -148,7 +142,7 @@ export default function VerifyOtpPage() {
         </div>
 
         {/* Demo message preview */}
-        {demoOtp && (
+        {pendingOtpPreview && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -159,7 +153,7 @@ export default function VerifyOtpPage() {
               Demo message
             </p>
             <p className="text-sm text-dark/70">
-              Your D.R.STORES OTP is <b className="text-xl font-black text-dark tracking-[0.2em]">{demoOtp}</b>
+              Your D.R.STORES OTP is <b className="text-xl font-black text-dark tracking-[0.2em]">{pendingOtpPreview}</b>
             </p>
           </motion.div>
         )}

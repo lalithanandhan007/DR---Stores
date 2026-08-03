@@ -41,7 +41,7 @@ function StatusToggle() {
 export default function AdminDashboardPage() {
   const { openModule } = useAdmin()
   const navigate = useNavigate()
-  const { statCards, storeStatus, adminProfile } = useAdminData()
+  const { loading, statCards, storeStatus, adminProfile } = useAdminData()
   const firstName = adminProfile.name.split(' ')[0]
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -100,9 +100,17 @@ export default function AdminDashboardPage() {
       </motion.div>
 
       {/* ============ STAT CARDS ============ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {statCards.map((s, i) => <StatCard key={s.id} stat={s} index={i} />)}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-40 rounded-3xl bg-black/4 animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {statCards.map((s, i) => <StatCard key={s.id} stat={s} index={i} />)}
+        </div>
+      )}
 
       {/* ============ CHARTS ROW 1 ============ */}
       <div className="grid lg:grid-cols-3 gap-4">

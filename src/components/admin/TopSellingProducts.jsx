@@ -4,13 +4,16 @@ import { useAdminData } from '../../context/AdminDataContext'
 
 export default function TopSellingProducts() {
   const { topProducts: rawTopProducts } = useAdminData()
+  if (!rawTopProducts?.length) return <div className="py-8 text-center text-sm text-dark/30">No product data available</div>
   const topProducts = rawTopProducts.map((p) => ({ ...p, _id: p._id || p.name }))
-  const maxRevenue = Math.max(...topProducts.map((p) => p.revenue))
+  const maxRevenue = Math.max(...topProducts.map((p) => p.revenue), 1)
   return (
     <div className="space-y-3">
       {topProducts.map((p, i) => {
         const up = p.trend >= 0
         const barPct = Math.round((p.revenue / maxRevenue) * 100)
+        const g0 = p.gradient?.[0] || '#4CAF50'
+        const g1 = p.gradient?.[1] || '#2E7D32'
         return (
           <motion.div
             key={p._id}
@@ -20,7 +23,7 @@ export default function TopSellingProducts() {
             transition={{ duration: 0.4, delay: i * 0.06 }}
             className="bg-white rounded-3xl border border-black/5 shadow-soft p-4 flex items-center gap-4 hover:shadow-card hover:-translate-y-0.5 transition-all duration-300"
           >
-            <div className="relative w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden" style={{ background: `linear-gradient(135deg, ${p.gradient[0]}22, ${p.gradient[1]}14)` }}>
+            <div className="relative w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden" style={{ background: `linear-gradient(135deg, ${g0}22, ${g1}14)` }}>
               <span className="text-2xl">{p.emoji}</span>
               <span className="absolute top-0.5 left-0.5 text-[9px] font-black text-dark/30">{i + 1}</span>
             </div>

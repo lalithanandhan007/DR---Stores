@@ -7,6 +7,7 @@ import { AuthProvider, WishlistProvider, SettingsProvider } from './context/Auth
 import { ProductsProvider } from './context/ProductsContext'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
+import Unauthorized from './components/admin/Unauthorized'
 import LandingPage from './pages/LandingPage'
 import VegetablesPage from './pages/VegetablesPage'
 import ProductDetailPage from './pages/ProductDetailPage'
@@ -90,78 +91,86 @@ function AdminLoader() {
   )
 }
 
+/* Hide the customer Navbar + CartPreview on admin routes — the admin
+   layout provides its own Topbar/Sidebar shell. */
+function AppShell() {
+  const { pathname } = useLocation()
+  const isAdmin = pathname.startsWith('/admin')
+  return (
+    <div className={`grain min-h-screen ${isAdmin ? 'bg-[#F5F7F5]' : 'bg-cream'} text-dark selection:bg-primary/20`}>
+      <ScrollToTop />
+      {!isAdmin && <Navbar />}
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/vegetables" element={<VegetablesPage />} />
+        <Route path="/vegetables/:id" element={<ProductDetailPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-failure" element={<PaymentFailure />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-otp" element={<VerifyOtpPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+        <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
+        <Route path="/addresses" element={<ProtectedRoute><AddressesPage /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/access-denied" element={<Unauthorized />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute role="admin">
+              <Suspense fallback={<AdminLoader />}>
+                <AdminLayout />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="products" element={<ProductsPage />} />
+          <Route path="products/new" element={<ProductFormPage />} />
+          <Route path="products/edit/:id" element={<ProductFormPage />} />
+          <Route path="categories" element={<CategoriesPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="orders/:id" element={<AdminOrderDetailPage />} />
+          <Route path="customers" element={<CustomersPage />} />
+          <Route path="customers/:id" element={<CustomerDetailPage />} />
+          <Route path="inventory" element={<InventoryPage />} />
+          <Route path="delivery" element={<DeliveryPage />} />
+          <Route path="coupons" element={<CouponsPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="activity" element={<AdminActivityPage />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      {!isAdmin && <CartPreview />}
+      <ToastContainer />
+    </div>
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <ProductsProvider>
-        <CartProvider>
-          <ToastProvider>
-            <RecentProvider>
-              <WishlistProvider>
-                <SettingsProvider>
-                  <div className="grain min-h-screen bg-cream text-dark selection:bg-primary/20">
-                    <ScrollToTop />
-                    <Navbar />
-                    <Routes>
-                      <Route path="/" element={<LandingPage />} />
-                      <Route path="/vegetables" element={<VegetablesPage />} />
-                      <Route path="/vegetables/:id" element={<ProductDetailPage />} />
-                      <Route path="/cart" element={<CartPage />} />
-                      <Route path="/checkout" element={<CheckoutPage />} />
-                      <Route path="/payment-success" element={<PaymentSuccess />} />
-                      <Route path="/payment-failure" element={<PaymentFailure />} />
-                      {/* Auth */}
-                      <Route path="/login" element={<LoginPage />} />
-                      <Route path="/register" element={<RegisterPage />} />
-                      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                      <Route path="/verify-otp" element={<VerifyOtpPage />} />
-                      <Route path="/reset-password" element={<ResetPasswordPage />} />
-                      {/* Account (protected) */}
-                      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                      <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-                      <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
-                      <Route path="/addresses" element={<ProtectedRoute><AddressesPage /></ProtectedRoute>} />
-                      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-                      {/* Admin (role-protected, lazy-loaded) */}
-                      <Route
-                        path="/admin"
-                        element={
-                          <ProtectedRoute role="admin">
-                            <Suspense fallback={<AdminLoader />}>
-                              <AdminLayout />
-                            </Suspense>
-                          </ProtectedRoute>
-                        }
-                      >
-                        <Route index element={<AdminDashboardPage />} />
-                        <Route path="dashboard" element={<AdminDashboardPage />} />
-                        <Route path="products" element={<ProductsPage />} />
-                        <Route path="products/new" element={<ProductFormPage />} />
-                        <Route path="products/edit/:id" element={<ProductFormPage />} />
-                        <Route path="categories" element={<CategoriesPage />} />
-                        <Route path="orders" element={<AdminOrdersPage />} />
-                        <Route path="orders/:id" element={<AdminOrderDetailPage />} />
-                        <Route path="customers" element={<CustomersPage />} />
-                        <Route path="customers/:id" element={<CustomerDetailPage />} />
-                        <Route path="inventory" element={<InventoryPage />} />
-                        <Route path="delivery" element={<DeliveryPage />} />
-                        <Route path="coupons" element={<CouponsPage />} />
-                        <Route path="reports" element={<ReportsPage />} />
-                        <Route path="analytics" element={<AnalyticsPage />} />
-                        <Route path="settings" element={<AdminSettingsPage />} />
-                        <Route path="activity" element={<AdminActivityPage />} />
-                      </Route>
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                    <CartPreview />
-                    <ToastContainer />
-                  </div>
-                </SettingsProvider>
-              </WishlistProvider>
-            </RecentProvider>
-          </ToastProvider>
-        </CartProvider>
+          <CartProvider>
+            <ToastProvider>
+              <RecentProvider>
+                <WishlistProvider>
+                  <SettingsProvider>
+                    <AppShell />
+                  </SettingsProvider>
+                </WishlistProvider>
+              </RecentProvider>
+            </ToastProvider>
+          </CartProvider>
         </ProductsProvider>
       </AuthProvider>
     </BrowserRouter>

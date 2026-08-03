@@ -23,6 +23,7 @@ function CountUp({ value, prefix = '', suffix = '' }) {
 
 /* Lightweight inline-SVG sparkline */
 function Sparkline({ data, color }) {
+  if (!data || data.length < 2) return <div className="w-24 h-8" />
   const w = 96
   const h = 32
   const min = Math.min(...data)

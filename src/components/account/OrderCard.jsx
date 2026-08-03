@@ -6,6 +6,7 @@ import {
   ShoppingBag, Truck, CookingPot, CircleCheckBig, Ban,
 } from 'lucide-react'
 import { useCart, useToast } from '../../context/CartContext'
+import PaymentStatusBadge from '../ui/PaymentStatusBadge'
 
 const TIMELINE = [
   { key: 'placed', label: 'Placed', icon: Package },
@@ -82,6 +83,8 @@ function Timeline({ status }) {
 }
 
 function InvoiceModal({ order, onClose }) {
+  const paymentStatus = order.payment?.status
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-dark/40 backdrop-blur-sm" onClick={onClose} />
@@ -103,6 +106,14 @@ function InvoiceModal({ order, onClose }) {
           <p className="text-xs text-dark/45 mt-1">Order <b className="text-dark">{order.id}</b></p>
           <p className="text-[11px] text-dark/40">{new Date(order.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
         </div>
+
+        {/* Payment status in invoice header */}
+        {paymentStatus && (
+          <div className="mb-4 flex items-center justify-center">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-dark/40 mr-2">Payment:</span>
+            <PaymentStatusBadge status={paymentStatus} />
+          </div>
+        )}
 
         <div className="space-y-2.5 text-sm border-t border-dashed border-black/10 pt-4">
           {order.items?.map(({ product, weight, qty }) => (
@@ -170,7 +181,12 @@ export default function OrderCard({ order, index }) {
             <p className="text-[11px] text-dark/40">{dateLabel} · {totalItems} item{totalItems > 1 ? 's' : ''}</p>
           </div>
         </div>
-        <StatusBadge status={order.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={order.status} />
+          {order.payment?.status && (
+            <PaymentStatusBadge status={order.payment.status} />
+          )}
+        </div>
       </div>
 
       {/* Timeline */}
@@ -233,6 +249,12 @@ export default function OrderCard({ order, index }) {
                 </div>
               </div>
               <div className="space-y-2.5">
+                {order.payment?.status && (
+                  <div className="flex items-center justify-between text-xs text-dark/55">
+                    <span>Payment Status</span>
+                    <PaymentStatusBadge status={order.payment.status} />
+                  </div>
+                )}
                 <div className="flex justify-between text-xs text-dark/55"><span>Subtotal</span><span>₹{order.subtotal}</span></div>
                 {order.couponDiscount > 0 && <div className="flex justify-between text-xs text-emerald-600"><span>Coupon</span><span>-₹{order.couponDiscount}</span></div>}
                 <div className="flex justify-between text-xs text-dark/55"><span>Delivery</span><span>{order.deliveryFee === 0 ? 'Free' : `₹${order.deliveryFee}`}</span></div>

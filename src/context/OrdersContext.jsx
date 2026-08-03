@@ -24,14 +24,26 @@ const LIVE_STEPS = {
 
 export function OrdersProvider({ children }) {
   const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const { addToast } = useToast()
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
     orderApi.adminAll({ limit: 300 })
-      .then((res) => setOrders(res.items || []))
-      .catch((err) => addToast(getErrorMessage(err, 'Could not load orders'), 'error', 3000))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+      .then((res) => {
+        setOrders(res.items || [])
+        setError(null)
+      })
+      .catch((err) => {
+        setError(getErrorMessage(err, 'Could not load orders'))
+        addToast(getErrorMessage(err, 'Could not load orders'), 'error', 3000)
+      })
+      .finally(() => setLoading(false))
+  }, [addToast])
+
+  useEffect(() => { load() }, [load])
 
   const getOrder = useCallback((id) => orders.find((o) => o._id === id), [orders])
 
@@ -85,7 +97,8 @@ export function OrdersProvider({ children }) {
 
   const value = useMemo(() => ({
     orders, getOrder, updateStatus, assignPartner, addNote, bulkStatus, deleteOrders,
-  }), [orders, getOrder, updateStatus, assignPartner, addNote, bulkStatus, deleteOrders])
+    loading, error, refresh: load,
+  }), [orders, getOrder, updateStatus, assignPartner, addNote, bulkStatus, deleteOrders, loading, error, load])
 
   return <OrdersCtx.Provider value={value}>{children}</OrdersCtx.Provider>
 }

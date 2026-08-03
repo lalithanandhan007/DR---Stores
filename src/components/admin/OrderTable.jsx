@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { MoreHorizontal, ArrowUpRight } from 'lucide-react'
 import { useOrders } from '../../context/OrdersContext'
 import { formatTime } from '../../utils/format'
+import PaymentStatusBadge from '../ui/PaymentStatusBadge'
 
 const STATUS = {
   delivered: { label: 'Delivered', cls: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
@@ -15,14 +16,16 @@ const STATUS = {
 export default function OrderTable({ orders: ordersProp }) {
   const { orders: ctxOrders } = useOrders()
   const navigate = useNavigate()
-  const recentOrders = (ordersProp || ctxOrders || []).slice(0, 7).map((o) => ({
+  const allOrders = ordersProp || ctxOrders || []
+  const recentOrders = allOrders.slice(0, 7).map((o) => ({
     _id: o._id,
     avatar: o.avatar || o.customer?.avatar || '',
     customer: typeof o.customer === 'string' ? o.customer : (o.customer?.name || '—'),
     emoji: o.emoji || (Array.isArray(o.items) && o.items[0]?.emoji) || '🛒',
     items: typeof o.items === 'number' ? o.items : (Array.isArray(o.items) ? o.items.reduce((s, it) => s + (it.qty || 0), 0) : 0),
     amount: o.amount ?? o.grandTotal ?? 0,
-    payment: typeof o.payment === 'string' ? o.payment : (o.payment?.method || '—'),
+    paymentMethod: typeof o.payment === 'string' ? o.payment : (o.payment?.method || '—'),
+    paymentStatus: o.payment?.status || 'pending',
     status: o.status,
     delivery: typeof o.delivery === 'string' ? o.delivery : (o.delivery?.slot?.label || formatTime(o.delivery?.expectedAt)),
   }))
@@ -63,9 +66,10 @@ export default function OrderTable({ orders: ordersProp }) {
                   </td>
                   <td className="px-5 py-3.5 text-xs font-bold text-dark whitespace-nowrap">₹{o.amount}</td>
                   <td className="px-5 py-3.5">
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-dark/55 bg-black/4 px-2.5 py-1 rounded-lg whitespace-nowrap">
-                      {o.payment}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] text-dark/40 font-medium">{o.paymentMethod}</span>
+                      <PaymentStatusBadge status={o.paymentStatus} />
+                    </div>
                   </td>
                   <td className="px-5 py-3.5">
                     <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${st.cls}`}>
@@ -87,7 +91,7 @@ export default function OrderTable({ orders: ordersProp }) {
       </div>
 
       <div className="flex items-center justify-between px-5 py-3.5 border-t border-black/5">
-        <p className="text-[11px] text-dark/40">Showing {recentOrders.length} of 214 today</p>
+        <p className="text-[11px] text-dark/40">Showing {recentOrders.length} of {allOrders.length} total</p>
         <button onClick={() => navigate('/admin/orders')} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary-dark transition-colors">
           View all orders <ArrowUpRight className="w-3.5 h-3.5" />
         </button>

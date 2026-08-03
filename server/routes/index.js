@@ -12,6 +12,7 @@ import deliveryRoutes from './deliveryRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
 import reviewRoutes from './reviewRoutes.js';
 import adminRoutes from './adminRoutes.js';
+import paymentRoutes from './paymentRoutes.js';
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.use('/inventory', inventoryRoutes);
 router.use('/delivery-partners', deliveryRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/reviews', reviewRoutes);
+router.use('/payments', paymentRoutes);
 router.use('/admin', adminRoutes);
 
 export default router;

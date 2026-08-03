@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Check, Package, Truck, MapPin, Clock, ArrowRight, Home, ShoppingBag, Copy } from 'lucide-react'
+import { Check, Package, Truck, MapPin, Clock, Home, ShoppingBag, Copy } from 'lucide-react'
 import { useToast } from '../context/CartContext'
+import PaymentStatusBadge from '../components/ui/PaymentStatusBadge'
+import { orderApi } from '../api'
 import Footer from '../components/Footer'
 
 /* ---------- Confetti particle ---------- */
@@ -42,31 +44,91 @@ function Confetti() {
 
 export default function PaymentSuccess() {
   const location = useLocation()
-  const order = location.state?.order
+  const [searchParams] = useSearchParams()
   const { addToast } = useToast()
   const [copied, setCopied] = useState(false)
+  const [order, setOrder] = useState(location.state?.order || null)
+  const [loading, setLoading] = useState(!location.state?.order)
+  const [error, setError] = useState(null)
 
-  useEffect(() => { addToast('Order placed successfully! 🎉', 'success', 4000) }, [])
+  // If no order in state, try to fetch from server using orderId from URL params
+  useEffect(() => {
+    if (order) return
 
-  if (!order) {
+    const orderId = searchParams.get('orderId')
+    if (!orderId) {
+      setError('No order found')
+      setLoading(false)
+      return
+    }
+
+    const fetchOrder = async () => {
+      try {
+        const fetched = await orderApi.get(orderId)
+        const normalized = {
+          ...fetched,
+          id: fetched._id || fetched.id,
+          date: fetched.createdAt || fetched.date,
+          slot: fetched.delivery?.slot || fetched.slot,
+        }
+        setOrder(normalized)
+      } catch (err) {
+        setError('Could not load order details')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrder()
+  }, [searchParams, order])
+
+  // Only show success toast when order is first loaded (not on refresh)
+  useEffect(() => {
+    if (order && !location.state?.order) {
+      // Only show toast if we fetched from server (not from router state)
+      addToast('Order placed successfully! 🎉', 'success', 4000)
+    } else if (order && location.state?.order) {
+      // Order came from router state - toast already shown by CheckoutPage (removed now)
+      // We don't add toast here to avoid duplicates
+    }
+  }, [order, addToast, location.state?.order])
+
+  const copyId = () => {
+    if (!order) return
+    navigator.clipboard?.writeText(order.id)
+    setCopied(true)
+    addToast('Order ID copied!', 'success')
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-cream pt-28 flex items-center justify-center">
         <div className="text-center">
-          <span className="text-7xl mb-5 block">✅</span>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-5"
+          />
+          <p className="text-dark/65">Loading order details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-cream pt-28 flex items-center justify-center">
+        <div className="text-center">
+          <span className="text-7xl mb-5 block">📦</span>
           <h1 className="text-2xl font-bold text-dark/65">No order found</h1>
+          <p className="text-dark/40 mt-2">{error || 'Unable to load order details'}</p>
           <Link to="/vegetables" className="mt-5 inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-sm">
             Browse Vegetables
           </Link>
         </div>
       </div>
     )
-  }
-
-  const copyId = () => {
-    navigator.clipboard?.writeText(order.id)
-    setCopied(true)
-    addToast('Order ID copied!', 'success')
-    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -149,6 +211,39 @@ export default function PaymentSuccess() {
             </div>
           )}
         </motion.div>
+
+        {/* Payment info */}
+        {order.payment?.gateway && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.95 }}
+            className="mt-4 p-5 rounded-2xl bg-white border border-black/5 shadow-soft space-y-2.5"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-dark/40">Payment</span>
+              <PaymentStatusBadge status={order.payment.status} />
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-dark/60">{order.payment.method}</span>
+              {order.payment.gateway === 'razorpay' && <span className="text-[10px] text-dark/35">via Razorpay</span>}
+            </div>
+            {(order.payment.transactionId || order.payment.razorpayPaymentId) && (
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-dark/40 text-xs">Transaction ID</span>
+                <span className="ml-auto text-dark/60 text-xs font-semibold break-all">{order.payment.transactionId || order.payment.razorpayPaymentId}</span>
+              </div>
+            )}
+            {order.payment.paidAt && (
+              <div className="flex items-center gap-3 text-sm">
+                <span className="text-dark/40 text-xs">Paid at</span>
+                <span className="ml-auto text-dark/60 text-xs">
+                  {new Date(order.payment.paidAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                </span>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* Estimated arrival */}
         <motion.div

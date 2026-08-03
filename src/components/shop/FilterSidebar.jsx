@@ -33,7 +33,7 @@ function FilterGroup({ title, children, defaultOpen = true }) {
 
 function Checkbox({ label, checked, onChange, count }) {
   return (
-    <label className="flex items-center gap-2.5 py-1.5 cursor-pointer group">
+    <label onClick={(e) => { e.preventDefault(); onChange() }} className="flex items-center gap-2.5 py-1.5 cursor-pointer group">
       <span className={`w-4.5 h-4.5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
         checked ? 'bg-primary border-primary' : 'border-black/20 group-hover:border-primary/50'
       }`}>

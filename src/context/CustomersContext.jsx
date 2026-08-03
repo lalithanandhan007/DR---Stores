@@ -7,19 +7,29 @@ const CustomersCtx = createContext(null)
 
 export function CustomersProvider({ children }) {
   const [customers, setCustomers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const { addToast } = useToast()
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
     customerApi.list({ limit: 200 })
-      .then((res) => setCustomers(res.items || []))
-      .catch((err) => addToast(getErrorMessage(err, 'Could not load customers'), 'error', 3000))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+      .then((res) => {
+        setCustomers(res.items || [])
+        setError(null)
+      })
+      .catch((err) => {
+        setError(getErrorMessage(err, 'Could not load customers'))
+        addToast(getErrorMessage(err, 'Could not load customers'), 'error', 3000)
+      })
+      .finally(() => setLoading(false))
+  }, [addToast])
+
+  useEffect(() => { load() }, [load])
 
   const getCustomer = useCallback((id) => {
-    const local = customers.find((c) => c._id === id)
-    if (local) return local
-    return { _id: id, name: '...', phone: '', email: '', avatar: '', tag: 'regular', blocked: false, notes: [], totalOrders: 0, lifetimeSpend: 0, avgOrderValue: 0 }
+    return customers.find((c) => c._id === id) || null
   }, [customers])
 
   const toggleBlock = useCallback((id) => {
@@ -71,7 +81,8 @@ export function CustomersProvider({ children }) {
 
   const value = useMemo(() => ({
     customers, getCustomer, toggleBlock, updateTag, addNote, removeNote, deleteCustomers,
-  }), [customers, getCustomer, toggleBlock, updateTag, addNote, removeNote, deleteCustomers])
+    loading, error, refresh: load,
+  }), [customers, getCustomer, toggleBlock, updateTag, addNote, removeNote, deleteCustomers, loading, error, load])
 
   return <CustomersCtx.Provider value={value}>{children}</CustomersCtx.Provider>
 }

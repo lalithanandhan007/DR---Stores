@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useProducts } from '../context/ProductsContext'
 import ProductCard from '../components/shop/ProductCard'
+import Skeleton from '../components/ui/Skeleton'
 import ProductVisual from '../components/shop/ProductVisual'
 import { useCart, useToast, useRecent } from '../context/CartContext'
 import { useWishlist } from '../context/AuthContext'
@@ -75,7 +76,7 @@ const nutritionIcons = {
 export default function ProductDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { products, productById } = useProducts()
+  const { products, productById, loading } = useProducts()
   const product = productById(id)
   const [selectedWeight, setSelectedWeight] = useState('')
   const [qty, setQty] = useState(1)
@@ -107,6 +108,26 @@ export default function ProductDetailPage() {
     if (!product) return []
     return products.filter((p) => p.id !== product.id && p.tags.some((t) => product.tags.includes(t))).slice(0, 3)
   }, [product, products])
+
+  if (loading) {
+    return (
+      <div className="relative min-h-screen pt-28">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 mb-20">
+            <Skeleton className="aspect-square rounded-[2rem]" />
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-12 w-1/3" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!product) {
     return (

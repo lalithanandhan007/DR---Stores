@@ -4,7 +4,8 @@ import { Leaf, LogOut, X, ChevronLeft } from 'lucide-react'
 import { useAdmin } from '../../context/AdminContext'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/CartContext'
-import { adminModules, adminProfile } from '../../data/adminData'
+import { useAdminData } from '../../context/AdminDataContext'
+import { adminModules } from '../../data/adminData'
 import { AdminIcon } from './ui'
 import Avatar from '../account/Avatar'
 
@@ -58,6 +59,7 @@ export default function Sidebar({ mobile = false }) {
   const { collapsed, setCollapsed, mobileOpen, setMobileOpen, openModule } = useAdmin()
   const { logout } = useAuth()
   const { addToast } = useToast()
+  const { adminProfile: apiProfile } = useAdminData()
   const navigate = useNavigate()
 
   const handleSelect = (module) => {
@@ -100,11 +102,11 @@ export default function Sidebar({ mobile = false }) {
           onClick={() => { openModule('profile'); navigate('/admin/dashboard') }}
           className={`group w-full flex items-center gap-3 rounded-2xl border border-black/5 bg-white shadow-soft hover:border-primary/20 transition-all ${isCollapsed ? 'justify-center p-2.5' : 'p-2.5'}`}
         >
-          <Avatar name={adminProfile.name} avatar={adminProfile.avatar} size={36} ring />
+          <Avatar name={apiProfile?.name} avatar={apiProfile?.avatar} size={36} ring />
           {!isCollapsed && (
             <div className="min-w-0 text-left">
-              <p className="text-xs font-bold text-dark truncate">{adminProfile.name}</p>
-              <p className="text-[10px] text-dark/40 truncate">{adminProfile.role}</p>
+              <p className="text-xs font-bold text-dark truncate">{apiProfile?.name}</p>
+              <p className="text-[10px] text-dark/40 truncate">{apiProfile?.role}</p>
             </div>
           )}
         </button>

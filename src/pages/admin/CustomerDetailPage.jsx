@@ -33,7 +33,7 @@ function Card({ title, subtitle, action, children, delay = 0 }) {
 export default function CustomerDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { getCustomer, toggleBlock, updateTag, addNote, removeNote } = useCustomers()
+  const { getCustomer, toggleBlock, updateTag, addNote, removeNote, loading } = useCustomers()
   const { addToast } = useToast()
   const customer = getCustomer(id)
 
@@ -41,6 +41,16 @@ export default function CustomerDetailPage() {
   const [blockConfirm, setBlockConfirm] = useState(false)
 
   useEffect(() => { window.scrollTo(0, 0) }, [id])
+
+  if (loading) {
+    return (
+      <div className="space-y-5">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-40 rounded-3xl bg-black/4 animate-pulse" />
+        ))}
+      </div>
+    )
+  }
 
   if (!customer) {
     return (

@@ -1,11 +1,15 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MapPin, Clock, ClipboardCheck, CreditCard, ChevronRight, Check, Plus, Trash2,
   Edit3, Home, Building2, Star, Truck, ArrowRight, ArrowLeft, ShieldCheck, Package,
 } from 'lucide-react'
+import paymentApi from '../api/paymentApi'
+import { orderApi } from '../api'
+import { getErrorMessage } from '../api/client'
 import { useCart, useToast, deliverySlots } from '../context/CartContext'
+import { useProducts } from '../context/ProductsContext'
 import Footer from '../components/Footer'
 
 const steps = [
@@ -286,10 +290,13 @@ function ReviewStep() {
 /* ========== STEP 4: PAYMENT ========== */
 function PaymentStep() {
   const [selected, setSelected] = useState('gpay')
-  const { placeOrder, grandTotal } = useCart()
+  const { placeOrder, clearCart, cartItems, grandTotal, deliveryFee, packagingFee, appliedCoupon, selectedSlot, defaultAddress } = useCart()
+  const { productById } = useProducts()
   const { addToast } = useToast()
   const navigate = useNavigate()
   const [placing, setPlacing] = useState(false)
+  const [creatingOrder, setCreatingOrder] = useState(false)
+  const failureHandled = useRef(false)
 
   const methods = [
     { id: 'gpay', label: 'Google Pay', icon: '💳', color: '#4285F4', desc: 'Pay via UPI' },
@@ -300,19 +307,135 @@ function PaymentStep() {
     { id: 'wallet', label: 'D.R.STORES Wallet', icon: '👛', color: '#FF9800', desc: 'Balance: ₹0' },
   ]
 
+  // Map method IDs to backend-expected payment method values
+  const methodToBackend = {
+    gpay: 'gpay',
+    phonepe: 'phonepe',
+    paytm: 'paytm',
+    card: 'card',
+    cod: 'Cash on Delivery',
+    wallet: 'wallet',
+  }
+
   const handlePay = async () => {
     setPlacing(true)
-    const result = await placeOrder({
-      paymentMethod: selected === 'cod' ? 'Cash on Delivery' : selected === 'card' ? 'Card' : 'UPI',
-    })
-    setPlacing(false)
-    if (result.success) {
-      addToast('Order placed successfully!', 'success')
-      navigate('/payment-success', { state: { order: result.order } })
+    failureHandled.current = false
+
+    const backendMethod = methodToBackend[selected] || selected
+
+    if (selected === 'cod') {
+      // COD: create order directly with 'cod' enum value
+      const result = await placeOrder({ paymentMethod: backendMethod })
+      setPlacing(false)
+      if (result.success) {
+        // Don't add toast here - PaymentSuccess page will handle it
+        navigate('/payment-success', { state: { order: result.order } })
+      } else {
+        addToast(result.message, 'error', 3500)
+      }
     } else {
-      addToast(result.message, 'error', 3500)
+      // Online payment: create Razorpay order
+      try {
+        setCreatingOrder(true)
+        const orderData = await paymentApi.createOrder({
+          items: cartItems.map((i) => {
+            const dbProduct = productById(i.product.id || i.product._id)
+            return { productId: dbProduct?._id || dbProduct?.id || i.product.id || i.product._id, weight: i.weight, qty: i.qty }
+          }),
+          coupon: appliedCoupon?.code || null,
+          deliveryFee,
+          packagingFee,
+          address: defaultAddress,
+          slot: selectedSlot,
+          special: '',
+          paymentMethod: backendMethod, // Pass payment method to backend
+        })
+        setCreatingOrder(false)
+
+        // Check if Razorpay SDK is loaded
+        if (typeof window.Razorpay === 'undefined') {
+          addToast('Payment gateway not loaded. Please refresh the page.', 'error', 4000)
+          setPlacing(false)
+          return
+        }
+
+        // Open Razorpay checkout
+        const options = {
+          key: orderData.key,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: 'D.R.STORES',
+          description: `Order ${orderData.orderId}`,
+          order_id: orderData.razorpayOrderId,
+          handler: async (response) => {
+            // Payment success
+            try {
+              await paymentApi.verifyPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderId: orderData.orderId,
+              })
+              // Order was verified, now fetch the updated order
+              const fetched = await orderApi.get(orderData.orderId)
+              const order = {
+                ...fetched,
+                id: fetched._id || fetched.id,
+                date: fetched.createdAt || fetched.date,
+                slot: fetched.delivery?.slot || fetched.slot,
+              }
+              clearCart()
+              // Don't add toast here - PaymentSuccess page will handle it
+              navigate('/payment-success', { state: { order } })
+            } catch (err) {
+              if (failureHandled.current) return
+              failureHandled.current = true
+              paymentApi.recordFailure({ orderId: orderData.orderId, razorpay_order_id: orderData.razorpayOrderId, error: 'Payment verification failed' }).catch(() => {})
+              navigate('/payment-failure', { state: { orderId: orderData.orderId, error: 'Payment verification failed', amount: grandTotal } })
+            }
+          },
+          prefill: {
+            name: orderData.customer.name,
+            email: orderData.customer.email,
+            contact: orderData.customer.contact,
+          },
+          theme: { color: '#2E7D32' },
+          modal: {
+            ondismiss: () => {
+              if (failureHandled.current) return
+              failureHandled.current = true
+              setPlacing(false)
+              paymentApi.recordFailure({ orderId: orderData.orderId, razorpay_order_id: orderData.razorpayOrderId, error: 'Payment was cancelled' }).catch(() => {})
+              navigate('/payment-failure', { state: { orderId: orderData.orderId, error: 'Payment was cancelled', amount: grandTotal } })
+            },
+          },
+        }
+
+        const rzp = new window.Razorpay(options)
+        rzp.on('payment.failed', (response) => {
+          if (failureHandled.current) return
+          failureHandled.current = true
+          setPlacing(false)
+          paymentApi.recordFailure({ orderId: orderData.orderId, razorpay_order_id: orderData.razorpayOrderId, error: response.error?.description || 'Payment failed' }).catch(() => {})
+          navigate('/payment-failure', {
+            state: {
+              orderId: orderData.orderId,
+              error: response.error?.description || 'Payment failed',
+              amount: grandTotal,
+              code: response.error?.code,
+            },
+          })
+        })
+        rzp.open()
+      } catch (err) {
+        setCreatingOrder(false)
+        setPlacing(false)
+        addToast(getErrorMessage(err, 'Could not initiate payment'), 'error', 3500)
+      }
     }
   }
+
+  const isLoading = placing || creatingOrder
 
   return (
     <div className="space-y-6">
@@ -324,9 +447,12 @@ function PaymentStep() {
             key={m.id}
             whileTap={{ scale: 0.98 }}
             onClick={() => setSelected(m.id)}
+            disabled={isLoading}
             className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-300 ${
-              selected === m.id ? 'border-primary bg-primary/5 shadow-soft' : 'border-black/8 bg-white hover:border-primary/25'
-            }`}
+              selected === m.id
+                ? 'border-primary bg-primary/5 shadow-soft'
+                : 'border-black/8 bg-white hover:border-primary/25'
+            } ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
           >
             <span className="text-2xl">{m.icon}</span>
             <div className="flex-1">
@@ -345,14 +471,17 @@ function PaymentStep() {
       <motion.button
         whileTap={{ scale: 0.97 }}
         onClick={handlePay}
-        disabled={placing}
+        disabled={isLoading}
         className="mt-4 w-full h-14 rounded-2xl bg-gradient-to-r from-primary via-secondary to-primary text-white text-base font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60"
       >
-        {placing ? (
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-6 h-6 border-3 border-white border-t-transparent rounded-full" />
+        {isLoading ? (
+          <>
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-6 h-6 border-3 border-white border-t-transparent rounded-full" />
+            {creatingOrder ? 'Creating order...' : 'Processing...'}
+          </>
         ) : (
           <>
-            Pay ₹{grandTotal}
+            {selected === 'cod' ? `Confirm Order ₹${grandTotal}` : `Pay ₹${grandTotal}`}
             <ShieldCheck className="w-5 h-5" />
           </>
         )}

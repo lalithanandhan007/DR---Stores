@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { X, Truck, Phone, Star, Navigation, CheckCircle2, Zap } from 'lucide-react'
-import { deliveryPartners } from '../../data/ordersData'
 import { useOrders } from '../../context/OrdersContext'
+import { useDelivery } from '../../context/DeliveryContext'
 
 const ETA_PRESETS = [20, 30, 45, 60]
 
 export default function AssignDeliveryModal({ order, onClose }) {
   const { assignPartner } = useOrders()
-  const [selected, setSelected] = useState(deliveryPartners[0]?._id || null)
+  const { partners } = useDelivery()
+  const [selected, setSelected] = useState(partners[0]?._id || null)
   const [eta, setEta] = useState(30)
   const [busy, setBusy] = useState(false)
 
-  const partner = deliveryPartners.find((p) => p._id === selected)
+  const partner = partners.find((p) => p._id === selected)
   if (!order) return null
 
   const handle = (dispatch) => {
@@ -54,7 +55,7 @@ export default function AssignDeliveryModal({ order, onClose }) {
           <div>
             <p className="text-xs font-bold text-dark/60 uppercase tracking-wider mb-2.5">Choose partner</p>
             <div className="space-y-2.5">
-              {deliveryPartners.map((p) => {
+              {partners.map((p) => {
                 const active = selected === p._id
                 return (
                   <button

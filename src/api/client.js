@@ -23,16 +23,17 @@ api.interceptors.response.use(
   (err) => {
     const status = err.response?.status
     const isAuthCall = err.config?.url?.includes('/auth/')
-    // Only treat a 401 as an expired session when we actually had a token.
-    // A guest hitting an admin-gated endpoint (no token) is expected and must
-    // not trigger a logout/redirect.
     const hadToken = !!localStorage.getItem('dr-token')
     if (status === 401 && hadToken && !isAuthCall) {
       localStorage.removeItem('dr-token')
       localStorage.removeItem('dr-user')
       localStorage.removeItem('dr-role')
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
+      // Preserve the current path so the user can be sent back after re-login
+      const currentPath = window.location.pathname + window.location.search
+      const isOnAdminRoute = currentPath.startsWith('/admin')
+      const target = isOnAdminRoute ? '/' : '/login'
+      if (!currentPath.includes('/login') && !currentPath.includes('/access-denied')) {
+        window.location.href = `${target}${target === '/login' ? `?expired=1` : ''}`
       }
     }
     return Promise.reject(err)

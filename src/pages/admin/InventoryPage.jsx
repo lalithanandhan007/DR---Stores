@@ -92,7 +92,7 @@ function RestockModal({ item, onClose }) {
 
 /* ================= MAIN PAGE ================= */
 export default function InventoryPage() {
-  const { inventory, history, bulkRestock } = useInventory()
+  const { inventory, history, bulkRestock, loading } = useInventory()
   const { addToast } = useToast()
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(INITIAL_FILTERS)
@@ -192,6 +192,14 @@ export default function InventoryPage() {
           </div>
 
           <div className="bg-white rounded-3xl border border-black/5 shadow-soft overflow-hidden">
+            {loading ? (
+              <div className="p-5 space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-14 rounded-xl bg-black/4 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+            <>
             <div className="overflow-x-auto">
               <table className="w-full text-left min-w-[1050px]">
                 <thead>
@@ -263,6 +271,8 @@ export default function InventoryPage() {
                 <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages} className="w-8 h-8 rounded-xl flex items-center justify-center text-dark/30 hover:bg-primary/8 disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
               </div>
             </div>
+            </>
+            )}
           </div>
         </>
       )}

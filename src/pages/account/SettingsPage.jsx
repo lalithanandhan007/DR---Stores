@@ -13,13 +13,13 @@ function Toggle({ checked, onChange, disabled }) {
     <button
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
-      className={`relative w-12 h-6.5 rounded-full transition-colors duration-300 ${disabled ? 'opacity-40 cursor-not-allowed' : checked ? 'bg-primary' : 'bg-black/12'}`}
+      className={`relative w-12 h-[26px] rounded-full overflow-hidden transition-colors duration-300 ${disabled ? 'opacity-40 cursor-not-allowed' : checked ? 'bg-primary' : 'bg-black/12'}`}
       aria-pressed={checked}
     >
       <motion.span
-        animate={{ x: checked ? 24 : 3 }}
+        animate={{ x: checked ? 22 : 2 }}
         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        className="absolute top-0.5 w-5.5 h-5.5 rounded-full bg-white shadow-sm"
+        className="absolute left-[2px] top-[2px] w-[22px] h-[22px] rounded-full bg-white shadow-sm"
       />
     </button>
   )
@@ -35,7 +35,7 @@ function Row({ icon: Icon, tint, title, desc, right }) {
         <p className="text-sm font-bold text-dark">{title}</p>
         {desc && <p className="text-[11px] text-dark/40 mt-0.5">{desc}</p>}
       </div>
-      {right}
+      <div className="shrink-0 ml-auto">{right}</div>
     </div>
   )
 }
@@ -75,7 +75,7 @@ export default function SettingsPage() {
   const handleDelete = () => {
     setDeleting(true)
     setTimeout(() => {
-      ;['dr-user', 'dr-role', 'dr-token', 'dr-accounts', 'dr-wishlist', 'dr-orders', 'dr-addresses', 'dr-default-address', 'dr-settings', 'dr-pending-otp', 'dr-pending-registration']
+      ;['dr-user', 'dr-role', 'dr-token', 'dr-remember-email', 'dr-stores-recent']
         .forEach((k) => localStorage.removeItem(k))
       setDeleting(false)
       logout()

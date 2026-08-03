@@ -53,25 +53,27 @@ export function AdminDataProvider({ children }) {
   const [analytics, setAnalytics] = useState(null)
   const [recentOrders, setRecentOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   const load = useCallback(() => {
     setLoading(true)
+    setError(null)
     adminApi.stats()
       .then((s) => {
         setStats(s)
         setRecentOrders(s.recentOrders || [])
         setNotifications(s.notifications || [])
       })
-      .catch(() => {})
-    adminApi.weeklyRevenue().then(setWeeklyRevenue).catch(() => {})
-    adminApi.monthlyRevenue().then(setMonthlyRevenue).catch(() => {})
-    adminApi.orderTrend().then(setOrdersTrend).catch(() => {})
-    adminApi.categoryDistribution().then(setCategoryDistribution).catch(() => {})
-    adminApi.topProducts().then(setTopProducts).catch(() => {})
-    adminApi.lowStock().then(setLowStock).catch(() => {})
-    adminApi.activity().then((logs) => setActivity(logs || [])).catch(() => {})
-    adminApi.analytics().then(setAnalytics).catch(() => {})
-    notificationApi.list().then((list) => setNotifications(list || [])).catch(() => {})
+      .catch(() => setError('Could not load dashboard stats'))
+    adminApi.weeklyRevenue().then(setWeeklyRevenue).catch(() => setError('Could not load weekly revenue'))
+    adminApi.monthlyRevenue().then(setMonthlyRevenue).catch(() => setError('Could not load monthly revenue'))
+    adminApi.orderTrend().then(setOrdersTrend).catch(() => setError('Could not load order trends'))
+    adminApi.categoryDistribution().then(setCategoryDistribution).catch(() => setError('Could not load categories'))
+    adminApi.topProducts().then(setTopProducts).catch(() => setError('Could not load top products'))
+    adminApi.lowStock().then(setLowStock).catch(() => setError('Could not load low-stock items'))
+    adminApi.activity().then((logs) => setActivity(logs || [])).catch(() => setError('Could not load activity'))
+    adminApi.analytics().then(setAnalytics).catch(() => setError('Could not load analytics'))
+    notificationApi.list().then((list) => setNotifications(list || [])).catch(() => setError('Could not load notifications'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -107,6 +109,7 @@ export function AdminDataProvider({ children }) {
 
   const value = useMemo(() => ({
     loading,
+    error,
     statCards,
     stats,
     adminProfile,
@@ -115,7 +118,7 @@ export function AdminDataProvider({ children }) {
     topProducts, lowStock, activity, notifications, analytics, recentOrders,
     refresh: load,
   }), [
-    loading, statCards, stats, adminProfile, weeklyRevenue, monthlyRevenue,
+    loading, error, statCards, stats, adminProfile, weeklyRevenue, monthlyRevenue,
     ordersTrend, categoryDistribution, topProducts, lowStock, activity,
     notifications, analytics, recentOrders, load,
   ])
