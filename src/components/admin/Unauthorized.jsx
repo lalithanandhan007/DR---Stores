@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ShieldAlert, ArrowLeft, Store, Sparkles, Lock } from 'lucide-react'
@@ -7,23 +8,22 @@ import { useToast } from '../../context/CartContext'
 /* Premium access-denied page shown when a non-admin user reaches admin routes.
    Includes a demo switch (frontend-only) so the dashboard can be explored. */
 export default function Unauthorized() {
-  const { role } = useAuth()
+  const { role, loginWithPassword } = useAuth()
   const { addToast } = useToast()
+  const [busy, setBusy] = useState(false)
 
-  const switchToAdminDemo = () => {
-    try {
-      localStorage.setItem('dr-role', 'admin')
-      localStorage.setItem('dr-user', JSON.stringify({
-        id: 'usr_admin_demo',
-        name: 'Store Admin',
-        email: 'admin@drstores.com',
-        phone: '9876543210',
-        avatar: null,
-        memberSince: new Date().toISOString(),
-      }))
-    } catch { /* storage blocked */ }
-    addToast('Switched to Admin demo account', 'success', 3000)
-    setTimeout(() => window.location.reload(), 600)
+  const switchToAdminDemo = async () => {
+    if (busy) return
+    setBusy(true)
+    // Real MongoDB-backed admin session (seeded admin account)
+    const result = await loginWithPassword('admin@drstores.com', 'demo123')
+    setBusy(false)
+    if (result.success) {
+      addToast('Switched to Admin demo account', 'success', 3000)
+      setTimeout(() => window.location.reload(), 600)
+    } else {
+      addToast(result.message || 'Could not switch to admin account', 'error', 3500)
+    }
   }
 
   return (

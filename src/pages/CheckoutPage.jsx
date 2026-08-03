@@ -300,13 +300,18 @@ function PaymentStep() {
     { id: 'wallet', label: 'D.R.STORES Wallet', icon: '👛', color: '#FF9800', desc: 'Balance: ₹0' },
   ]
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setPlacing(true)
-    setTimeout(() => {
-      const order = placeOrder()
+    const result = await placeOrder({
+      paymentMethod: selected === 'cod' ? 'Cash on Delivery' : selected === 'card' ? 'Card' : 'UPI',
+    })
+    setPlacing(false)
+    if (result.success) {
       addToast('Order placed successfully!', 'success')
-      navigate('/payment-success', { state: { order } })
-    }, 1500)
+      navigate('/payment-success', { state: { order: result.order } })
+    } else {
+      addToast(result.message, 'error', 3500)
+    }
   }
 
   return (

@@ -1,11 +1,14 @@
-import { createContext, useContext, useReducer, useCallback, useState } from 'react'
+import { createContext, useContext, useReducer, useCallback, useState, useEffect, useMemo } from 'react'
 import products from '../data/products'
+import { cartApi, orderApi, addressApi, couponApi } from '../api'
+import { getErrorMessage } from '../api/client'
+import { useAuth } from './AuthContext'
 
 const CartCtx = createContext(null)
 const ToastCtx = createContext(null)
 const RecentCtx = createContext(null)
 
-/* ========== COUPONS ========== */
+/* ========== LOCAL COUPONS (guest fallback) ========== */
 export const coupons = {
   WELCOME50: { type: 'flat', value: 50, minOrder: 150, label: '₹50 off on orders above ₹150', color: '#2E7D32' },
   FIRSTORDER: { type: 'percent', value: 15, maxDiscount: 75, minOrder: 200, label: '15% off up to ₹75 on first order', color: '#FF9800' },
@@ -22,7 +25,7 @@ export const deliverySlots = [
   { id: 'evening', label: 'Tomorrow Evening', time: '5:00 PM - 8:00 PM', price: 0, icon: '🌆', description: 'Free delivery', available: true },
 ]
 
-/* ========== CART REDUCER ========== */
+/* ========== CART REDUCER (guest / offline fallback) ========== */
 function cartReducer(state, action) {
   switch (action.type) {
     case 'ADD': {
@@ -54,13 +57,57 @@ function cartReducer(state, action) {
     }
     case 'CLEAR':
       return {}
+    case 'SET': {
+      // Replace entire cart state (from backend)
+      const next = {}
+      action.items.forEach((item) => {
+        next[item.key] = { product: item.product, weight: item.weight, qty: item.qty }
+      })
+      return next
+    }
     default:
       return state
   }
 }
 
+/* Map a backend Cart item to the frontend shape used by every page */
+function toFrontendItem(item) {
+  const p = item.product && typeof item.product === 'object'
+    ? item.product
+    : products.find((pp) => pp.id === (item.product || item.productId))
+  const product = p
+    ? {
+        id: p._id || p.id,
+        name: p.name || item.productName,
+        emoji: p.emoji,
+        gradient: p.gradient,
+        price: p.price ?? item.price ?? 0,
+        originalPrice: p.originalPrice ?? item.originalPrice ?? 0,
+        unit: p.unit,
+        weightOptions: p.weightOptions,
+        stock: p.stock,
+        badges: p.badges,
+      }
+    : {
+        id: item.product || item.productId,
+        name: item.productName || 'Item',
+        emoji: item.emoji || '🛒',
+        gradient: item.gradient || ['#2E7D32', '#4CAF50'],
+        price: item.price ?? 0,
+        originalPrice: item.originalPrice ?? 0,
+      }
+  const weight = item.weight || product.weightOptions?.[0] || ''
+  return {
+    key: `${product.id}-${weight}`,
+    product,
+    weight,
+    qty: item.qty || 1,
+  }
+}
+
 /* ========== CART PROVIDER ========== */
 export function CartProvider({ children }) {
+  const { user, isAuthenticated } = useAuth()
   const [items, dispatch] = useReducer(cartReducer, {})
   const [previewOpen, setPreviewOpen] = useState(false)
   const [appliedCoupon, setAppliedCoupon] = useState(null)
@@ -72,23 +119,61 @@ export function CartProvider({ children }) {
     try { return localStorage.getItem('dr-default-address') || null } catch { return null }
   })
   const [removedItem, setRemovedItem] = useState(null)
-  const [orderHistory, setOrderHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('dr-orders') || '[]') } catch { return [] }
-  })
+  const [orderHistory, setOrderHistory] = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+
+  /* Load DB cart + addresses + orders whenever the session changes */
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      setOrderHistory([])
+      return
+    }
+    setOrdersLoading(true)
+    cartApi.get().then((cart) => {
+      dispatch({ type: 'SET', items: (cart.items || []).map(toFrontendItem) })
+    }).catch(() => {})
+    addressApi.list().then((list) => {
+      const mapped = (list || []).map((a) => ({ ...a, id: a._id }))
+      setAddresses(mapped)
+      const def = mapped.find((a) => a.isDefault)
+      setDefaultAddressId(def?.id || mapped[0]?.id || null)
+    }).catch(() => {})
+    orderApi.my().then((orders) => {
+      setOrderHistory((orders || []).map((o) => ({ ...o, id: o._id, date: o.createdAt || o.date })))
+    }).catch(() => {}).finally(() => setOrdersLoading(false))
+  }, [isAuthenticated, user])
 
   const addItem = useCallback((product, weight, qty = 1) => {
-    dispatch({ type: 'ADD', product, weight, qty })
-  }, [])
+    if (isAuthenticated) {
+      cartApi.add(product.id, weight || product.weightOptions?.[0], qty)
+        .then((cart) => dispatch({ type: 'SET', items: (cart.items || []).map(toFrontendItem) }))
+        .catch(() => dispatch({ type: 'ADD', product, weight, qty }))
+    } else {
+      dispatch({ type: 'ADD', product, weight, qty })
+    }
+  }, [isAuthenticated])
 
   const updateQty = useCallback((key, qty) => {
-    dispatch({ type: 'UPDATE', key, qty })
-  }, [])
+    if (isAuthenticated) {
+      cartApi.update(key, qty)
+        .then((cart) => dispatch({ type: 'SET', items: (cart.items || []).map(toFrontendItem) }))
+        .catch(() => dispatch({ type: 'UPDATE', key, qty }))
+    } else {
+      dispatch({ type: 'UPDATE', key, qty })
+    }
+  }, [isAuthenticated])
 
   const removeItem = useCallback((key) => {
     const item = items[key]
     if (item) setRemovedItem({ key, ...item })
-    dispatch({ type: 'REMOVE', key })
-  }, [items])
+    if (isAuthenticated) {
+      cartApi.remove(key)
+        .then((cart) => dispatch({ type: 'SET', items: (cart.items || []).map(toFrontendItem) }))
+        .catch(() => dispatch({ type: 'REMOVE', key }))
+    } else {
+      dispatch({ type: 'REMOVE', key })
+    }
+  }, [items, isAuthenticated])
 
   const undoRemove = useCallback(() => {
     if (removedItem) {
@@ -97,12 +182,15 @@ export function CartProvider({ children }) {
     }
   }, [removedItem])
 
-  const clearCart = useCallback(() => dispatch({ type: 'CLEAR' }), [])
+  const clearCart = useCallback(() => {
+    dispatch({ type: 'CLEAR' })
+    if (isAuthenticated) cartApi.clear().catch(() => {})
+  }, [isAuthenticated])
 
   const cartItems = Object.entries(items).map(([key, val]) => ({ key, ...val }))
   const totalItems = cartItems.reduce((s, i) => s + i.qty, 0)
   const subtotal = cartItems.reduce((s, i) => s + i.product.price * i.qty, 0)
-  const totalSaved = cartItems.reduce((s, i) => s + (i.product.originalPrice - i.product.price) * i.qty, 0)
+  const totalSaved = cartItems.reduce((s, i) => s + ((i.product.originalPrice || 0) - i.product.price) * i.qty, 0)
 
   // Coupon discount
   const couponDiscount = appliedCoupon ? (() => {
@@ -118,23 +206,58 @@ export function CartProvider({ children }) {
 
   const applyCoupon = useCallback((code) => {
     const upper = code.toUpperCase().trim()
-    const coupon = coupons[upper]
-    if (!coupon) return { success: false, message: 'Invalid coupon code' }
-    if (subtotal < coupon.minOrder) return { success: false, message: `Minimum order ₹${coupon.minOrder} required` }
-    setAppliedCoupon({ ...coupon, code: upper })
-    return { success: true, message: `"${upper}" applied successfully!` }
-  }, [subtotal])
+    if (!upper) return { success: false, message: 'Enter a coupon code' }
+    if (isAuthenticated) {
+      // validate against MongoDB-backed coupons
+      return couponApi.validate(upper, subtotal)
+        .then((c) => {
+          const mapped = { ...c, code: c.code, label: c.description || `${c.value} off` }
+          setAppliedCoupon(mapped)
+          return { success: true, message: `"${upper}" applied successfully!` }
+        })
+        .catch((err) => ({ success: false, message: getErrorMessage(err, 'Invalid coupon code') }))
+    }
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const coupon = coupons[upper]
+        if (!coupon) return resolve({ success: false, message: 'Invalid coupon code' })
+        if (subtotal < coupon.minOrder) return resolve({ success: false, message: `Minimum order ₹${coupon.minOrder} required` })
+        setAppliedCoupon({ ...coupon, code: upper })
+        resolve({ success: true, message: `"${upper}" applied successfully!` })
+      }, 400)
+    })
+  }, [isAuthenticated, subtotal])
 
   const removeCoupon = useCallback(() => setAppliedCoupon(null), [])
 
-  // Address management
+  /* ---------- Addresses (MongoDB-backed when logged in) ---------- */
   const saveAddress = useCallback((addr) => {
-    setAddresses((prev) => {
-      const updated = addr.id ? prev.map((a) => a.id === addr.id ? addr : a) : [...prev, { ...addr, id: Date.now().toString() }]
-      localStorage.setItem('dr-addresses', JSON.stringify(updated))
-      return updated
+    if (isAuthenticated) {
+      const payload = {
+        label: addr.label, name: addr.name || user?.name, house: addr.house, street: addr.street,
+        locality: addr.locality, city: addr.city, pincode: addr.pincode, landmark: addr.landmark,
+        isDefault: addr.isDefault || addresses.length === 0,
+      }
+      return (addr.id ? addressApi.update(addr.id, payload) : addressApi.create(payload)).then((saved) => {
+        const mapped = { ...saved, id: saved._id }
+        setAddresses((prev) => {
+          const updated = addr.id ? prev.map((a) => a.id === addr.id ? mapped : a) : [...prev, mapped]
+          localStorage.setItem('dr-addresses', JSON.stringify(updated))
+          return updated
+        })
+        if (mapped.isDefault) setDefaultAddressId(mapped.id)
+        return saved
+      })
+    }
+    return new Promise((resolve) => {
+      setAddresses((prev) => {
+        const updated = addr.id ? prev.map((a) => a.id === addr.id ? addr : a) : [...prev, { ...addr, id: Date.now().toString() }]
+        localStorage.setItem('dr-addresses', JSON.stringify(updated))
+        resolve(updated)
+        return updated
+      })
     })
-  }, [])
+  }, [isAuthenticated, addresses.length, user?.name])
 
   const deleteAddress = useCallback((id) => {
     setAddresses((prev) => {
@@ -143,39 +266,70 @@ export function CartProvider({ children }) {
       return updated
     })
     if (defaultAddressId === id) setDefaultAddressId(null)
-  }, [defaultAddressId])
+    if (isAuthenticated) addressApi.remove(id).catch(() => {})
+  }, [defaultAddressId, isAuthenticated])
 
   const setDefaultAddress = useCallback((id) => {
     setDefaultAddressId(id)
     localStorage.setItem('dr-default-address', id)
-  }, [])
+    if (isAuthenticated) addressApi.setDefault(id).catch(() => {})
+  }, [isAuthenticated])
 
   const defaultAddress = addresses.find((a) => a.id === defaultAddressId) || addresses[0] || null
 
-  // Place order
-  const placeOrder = useCallback(() => {
-    const order = {
-      id: `DR${Date.now().toString(36).toUpperCase()}`,
-      items: cartItems,
-      subtotal, couponDiscount, deliveryFee, packagingFee, tax, grandTotal,
-      coupon: appliedCoupon?.code || null,
-      slot: selectedSlot,
-      address: defaultAddress,
-      status: 'confirmed',
-      date: new Date().toISOString(),
+  /* ---------- Place order (MongoDB) ---------- */
+  const placeOrder = useCallback(async (overrides) => {
+    if (isAuthenticated) {
+      const payload = {
+        items: cartItems.map((i) => ({ productId: i.product.id, weight: i.weight, qty: i.qty })),
+        coupon: appliedCoupon?.code || null,
+        deliveryFee,
+        packagingFee,
+        address: defaultAddress || overrides?.address,
+        slot: selectedSlot,
+        paymentMethod: overrides?.paymentMethod || 'UPI',
+        special: overrides?.special || '',
+      }
+      try {
+        const order = await orderApi.place(payload)
+        const normalized = {
+          ...order,
+          id: order._id,
+          date: order.createdAt || order.date,
+          slot: order.delivery?.slot || order.slot,
+        }
+        dispatch({ type: 'CLEAR' })
+        setAppliedCoupon(null)
+        setOrderHistory((prev) => [normalized, ...prev])
+        return { success: true, order: normalized }
+      } catch (err) {
+        return { success: false, message: getErrorMessage(err, 'Could not place order') }
+      }
     }
-    setOrderHistory((prev) => {
-      const updated = [order, ...prev]
-      localStorage.setItem('dr-orders', JSON.stringify(updated))
-      return updated
+    // Guest fallback (kept so the checkout demo still works offline)
+    return new Promise((resolve) => {
+      const order = {
+        id: `DR${Date.now().toString(36).toUpperCase()}`,
+        items: cartItems,
+        subtotal, couponDiscount, deliveryFee, packagingFee, tax, grandTotal,
+        coupon: appliedCoupon?.code || null,
+        slot: selectedSlot,
+        address: defaultAddress,
+        status: 'confirmed',
+        date: new Date().toISOString(),
+      }
+      setOrderHistory((prev) => {
+        const updated = [order, ...prev]
+        localStorage.setItem('dr-orders', JSON.stringify(updated))
+        return updated
+      })
+      dispatch({ type: 'CLEAR' })
+      setAppliedCoupon(null)
+      resolve({ success: true, order })
     })
-    dispatch({ type: 'CLEAR' })
-    setAppliedCoupon(null)
-    return order
-  }, [cartItems, subtotal, couponDiscount, deliveryFee, packagingFee, tax, grandTotal, appliedCoupon, selectedSlot, defaultAddress])
+  }, [isAuthenticated, cartItems, subtotal, couponDiscount, deliveryFee, packagingFee, tax, grandTotal, appliedCoupon, selectedSlot, defaultAddress])
 
-  /* Sample orders shown on the Orders page when the account has none yet,
-     so every timeline state (Delivered / Preparing / Cancelled) is visible. */
+  /* Sample orders shown on the Orders page when the account has none yet */
   const seedDemoOrders = useCallback(() => {
     setOrderHistory((prev) => {
       if (prev.length > 0) return prev
@@ -217,7 +371,7 @@ export function CartProvider({ children }) {
     })
   }, [])
 
-  const cartValue = {
+  const cartValue = useMemo(() => ({
     items, cartItems, totalItems, subtotal, totalSaved, grandTotal,
     couponDiscount, deliveryFee, packagingFee, tax,
     appliedCoupon, applyCoupon, removeCoupon,
@@ -227,8 +381,17 @@ export function CartProvider({ children }) {
     addItem, updateQty, removeItem, undoRemove, clearCart,
     removedItem, setRemovedItem,
     previewOpen, setPreviewOpen,
-    placeOrder, orderHistory, seedDemoOrders,
-  }
+    placeOrder, orderHistory, seedDemoOrders, ordersLoading,
+  }), [
+    items, cartItems, totalItems, subtotal, totalSaved, grandTotal,
+    couponDiscount, deliveryFee, packagingFee, tax,
+    appliedCoupon, applyCoupon, removeCoupon,
+    selectedSlot, addresses, defaultAddress, defaultAddressId,
+    saveAddress, deleteAddress, setDefaultAddress,
+    addItem, updateQty, removeItem, undoRemove, clearCart,
+    removedItem, previewOpen,
+    placeOrder, orderHistory, seedDemoOrders, ordersLoading,
+  ])
 
   return (
     <CartCtx.Provider value={cartValue}>
@@ -277,31 +440,27 @@ export function useToast() {
   return ctx
 }
 
-/* ========== RECENTLY VIEWED ========== */
+/* ========== RECENT PROVIDER (recently viewed — device-local history) ========== */
 const RECENT_KEY = 'dr-stores-recent'
-const MAX_RECENT = 12
 
 export function RecentProvider({ children }) {
   const [recent, setRecent] = useState(() => {
     try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]') } catch { return [] }
   })
 
-  const addRecent = useCallback((product) => {
+  const addRecent = useCallback((id) => {
     setRecent((prev) => {
-      const filtered = prev.filter((p) => p.id !== product.id)
-      const updated = [product, ...filtered].slice(0, MAX_RECENT)
-      try { localStorage.setItem(RECENT_KEY, JSON.stringify(updated.map((p) => p.id))) } catch {}
+      const updated = [id, ...prev.filter((x) => x !== id)].slice(0, 12)
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(updated)) } catch {}
       return updated
     })
   }, [])
 
-  return (
-    <RecentCtx.Provider value={{ recent, addRecent }}>
-      {children}
-    </RecentCtx.Provider>
-  )
+  return <RecentCtx.Provider value={{ recent, addRecent }}>{children}</RecentCtx.Provider>
 }
 
 export function useRecent() {
-  return useContext(RecentCtx) || { recent: [], addRecent: () => {} }
+  const ctx = useContext(RecentCtx)
+  if (!ctx) throw new Error('useRecent must be used within RecentProvider')
+  return ctx
 }

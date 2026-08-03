@@ -1,10 +1,17 @@
 import { motion } from 'framer-motion'
 import { AlertTriangle, PackagePlus } from 'lucide-react'
-import { lowStock } from '../../data/adminData'
+import { useAdminData } from '../../context/AdminDataContext'
 import { useToast } from '../../context/CartContext'
 
 export default function LowStockCard() {
+  const { lowStock: rawLowStock } = useAdminData()
   const { addToast } = useToast()
+  const lowStock = rawLowStock.map((p) => ({
+    ...p,
+    name: p.name || p.productName || '—',
+    stock: p.currentStock ?? p.stock ?? 0,
+    reorder: p.minStock ?? p.reorder ?? 0,
+  }))
   return (
     <div className="grid sm:grid-cols-2 gap-3">
       {lowStock.map((p, i) => {

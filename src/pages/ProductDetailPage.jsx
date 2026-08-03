@@ -6,7 +6,7 @@ import {
   ShieldCheck, MapPin, Thermometer, Award, ThumbsUp, Eye, Package, BadgeCheck,
   ArrowLeft, Check, Share2,
 } from 'lucide-react'
-import products from '../data/products'
+import { useProducts } from '../context/ProductsContext'
 import ProductCard from '../components/shop/ProductCard'
 import ProductVisual from '../components/shop/ProductVisual'
 import { useCart, useToast, useRecent } from '../context/CartContext'
@@ -75,7 +75,8 @@ const nutritionIcons = {
 export default function ProductDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const product = products.find((p) => p.id === id)
+  const { products, productById } = useProducts()
+  const product = productById(id)
   const [selectedWeight, setSelectedWeight] = useState('')
   const [qty, setQty] = useState(1)
   const [activeTab, setActiveTab] = useState('nutrition')
@@ -90,22 +91,22 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (product) {
-      setSelectedWeight(product.weightOptions?.[0] || '')
+      setSelectedWeight((w) => w || product.weightOptions?.[0] || '')
       setQty(1)
       addRecent(product)
     }
     window.scrollTo(0, 0)
-  }, [id])
+  }, [id, product, addRecent])
 
   const related = useMemo(() => {
     if (!product) return []
     return products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 4)
-  }, [product])
+  }, [product, products])
 
   const boughtTogether = useMemo(() => {
     if (!product) return []
     return products.filter((p) => p.id !== product.id && p.tags.some((t) => product.tags.includes(t))).slice(0, 3)
-  }, [product])
+  }, [product, products])
 
   if (!product) {
     return (

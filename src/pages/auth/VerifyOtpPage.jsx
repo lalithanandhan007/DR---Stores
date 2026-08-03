@@ -7,12 +7,11 @@ import AuthHeader from '../../components/auth/AuthHeader'
 import OtpInput from '../../components/auth/OtpInput'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/CartContext'
-import { ROLES } from '../../context/AuthContext'
 
 const OTP_EXPIRY_SECONDS = 30
 
 export default function VerifyOtpPage() {
-  const { verifyOtp, sendOtp, consumeRegistration, saveAccount, login } = useAuth()
+  const { verifyOtp, sendOtp, consumeRegistration, register, loginWithOtp } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
@@ -69,53 +68,47 @@ export default function VerifyOtpPage() {
   }
 
   /* ---------- Post-verification routing by purpose ---------- */
-  const complete = useCallback(() => {
+  const complete = useCallback(async () => {
     if (purpose === 'register') {
       const pending = consumeRegistration()
       if (pending) {
-        saveAccount({ ...pending, memberSince: new Date().toISOString() })
-        login({
-          id: 'usr_' + pending.email.replace(/[^a-z0-9]/gi, ''),
-          name: pending.name,
-          email: pending.email,
-          phone: pending.phone,
-          avatar: null,
-          memberSince: new Date().toISOString(),
-        }, ROLES.CUSTOMER)
+        // Creates a real User document in MongoDB via the API
+        const res = await register(pending)
+        if (!res.success) {
+          addToast(res.message, 'error', 3500)
+          navigate('/login', { replace: true })
+          return
+        }
       }
       navigate('/profile', { replace: true })
     } else if (purpose === 'reset') {
       navigate('/reset-password', { replace: true, state: { identifier } })
     } else {
-      // login via phone — reuse an existing account if the phone matches
-      const phoneDigits = identifier.replace(/\D/g, '')
-      const accounts = JSON.parse(localStorage.getItem('dr-accounts') || '[]')
-      const match = accounts.find((a) => String(a.phone || '').replace(/\D/g, '') === phoneDigits)
-      login(
-        match
-          ? { id: 'usr_' + match.email.replace(/[^a-z0-9]/gi, ''), name: match.name, email: match.email, phone: match.phone, avatar: null, memberSince: match.memberSince }
-          : { id: 'usr_' + phoneDigits, name: 'Customer', email: '', phone: identifier, avatar: null, memberSince: new Date().toISOString() },
-        ROLES.CUSTOMER,
-      )
+      // login via phone OTP — MongoDB-backed session
+      const res = await loginWithOtp(identifier)
+      if (!res.success) {
+        addToast(res.message, 'error', 3500)
+        navigate('/login', { replace: true })
+        return
+      }
+      addToast(`Welcome back, ${res.user.name.split(' ')[0]}! 👋`, 'success', 3000)
       navigate(from, { replace: true })
     }
-  }, [purpose, consumeRegistration, saveAccount, login, identifier, navigate, from])
+  }, [purpose, consumeRegistration, register, loginWithOtp, identifier, navigate, from, addToast])
 
-  const handleComplete = (value) => {
+  const handleComplete = async (value) => {
     if (verifying) return
     setVerifying(true)
-    setTimeout(() => {
-      const result = verifyOtp(value)
-      if (result.success) {
-        addToast('Verified successfully! 🎉', 'success', 3000)
-        setSuccess(true)
-        setTimeout(complete, 1300)
-      } else {
-        setError(result.message)
-        setCode('')
-        setVerifying(false)
-      }
-    }, 1300)
+    const result = await verifyOtp(identifier, value, purpose)
+    if (result.success) {
+      addToast('Verified successfully! 🎉', 'success', 3000)
+      setSuccess(true)
+      setTimeout(complete, 1300)
+    } else {
+      setError(result.message)
+      setCode('')
+      setVerifying(false)
+    }
   }
 
   const Icon = purpose === 'reset' ? Mail : Smartphone

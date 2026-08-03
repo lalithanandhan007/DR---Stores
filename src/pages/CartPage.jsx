@@ -30,9 +30,9 @@ function CouponPanel() {
   const { applyCoupon, removeCoupon, appliedCoupon, subtotal } = useCart()
   const { addToast } = useToast()
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!code.trim()) return
-    const res = applyCoupon(code)
+    const res = await applyCoupon(code)
     setResult(res)
     if (res.success) {
       addToast(res.message, 'success')

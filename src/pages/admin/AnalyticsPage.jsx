@@ -6,10 +6,10 @@ import {
 } from 'recharts'
 import { TrendingUp, TrendingDown, Users, ShoppingBag, Wallet, Target, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import {
-  dailyRevenue, monthlyRevenue, salesByHour, salesByDay,
-  customerGrowth, topProducts, topCategories, kpiSummary, weeklyRevenue,
-  customerRetention, avgOrderValue, conversionRate,
+  monthlyRevenue, salesByHour, salesByDay,
+  customerGrowth, customerRetention, avgOrderValue, conversionRate,
 } from '../../data/analyticsData'
+import { useAdminData } from '../../context/AdminDataContext'
 import { inr } from '../../utils/format'
 
 const COLORS = ['#2E7D32', '#4CAF50', '#66BB6A', '#81C784', '#A5D6A7', '#C8E6C9', '#E8F5E9']
@@ -63,6 +63,10 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState('monthly')
+  const { analytics } = useAdminData()
+  const kpiSummary = analytics?.kpiSummary || []
+  const topProducts = analytics?.topProducts || []
+  const topCategories = analytics?.topCategories || []
 
   return (
     <div className="space-y-5">

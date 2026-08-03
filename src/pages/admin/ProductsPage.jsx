@@ -6,7 +6,8 @@ import {
   Copy, Archive, EyeOff, ChevronLeft, ChevronRight, X, ChevronDown,
   MoreHorizontal, AlertTriangle, ShoppingCart,
 } from 'lucide-react'
-import { adminProducts, adminCategories, productStatuses } from '../../data/productsData'
+import { productStatuses } from '../../data/productsData'
+import { useProducts } from '../../context/ProductsContext'
 
 const PAGE_SIZE = 10
 
@@ -76,8 +77,9 @@ function DeleteModal({ product, onClose, onConfirm }) {
 
 /* ================= VIEW MODAL ================= */
 function ViewModal({ product, onClose, onEdit }) {
+  const { categories } = useProducts()
   if (!product) return null
-  const cat = adminCategories.find((c) => c._id === product.category)
+  const cat = categories.find((c) => c._id === product.category)
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-dark/40 backdrop-blur-sm" onClick={onClose} />
@@ -148,6 +150,7 @@ function ImportExportModal({ type, onClose }) {
 
 /* ================= FILTER PANEL ================= */
 function FilterPanel({ filters, setFilters, open, onClose }) {
+  const { categories } = useProducts()
   if (!open) return null
   const set = (k, v) => setFilters((f) => ({ ...f, [k]: v }))
   const clear = () => setFilters({ category: '', stock: '', priceMin: '', priceMax: '', organic: false, fresh: false, featured: false, status: '' })
@@ -166,7 +169,7 @@ function FilterPanel({ filters, setFilters, open, onClose }) {
             <label className="block text-xs font-bold text-dark/60 mb-2">Category</label>
             <select value={filters.category} onChange={(e) => set('category', e.target.value)} className="w-full h-10 px-3 rounded-xl bg-cream border border-black/8 text-sm text-dark focus:outline-none focus:border-primary/30">
               <option value="">All categories</option>
-              {adminCategories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+              {categories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
             </select>
           </div>
 
@@ -215,6 +218,7 @@ function FilterPanel({ filters, setFilters, open, onClose }) {
 /* ================= MAIN PRODUCTS PAGE ================= */
 export default function ProductsPage() {
   const navigate = useNavigate()
+  const { allProducts, categories } = useProducts()
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('updatedAt')
   const [sortDir, setSortDir] = useState('desc')
@@ -226,7 +230,9 @@ export default function ProductsPage() {
   const [deleteProduct, setDeleteProduct] = useState(null)
   const [viewProduct, setViewProduct] = useState(null)
   const [importExport, setImportExport] = useState(null)
-  const [products, setProducts] = useState(adminProducts)
+  const [products, setProducts] = useState(allProducts)
+
+  useEffect(() => { setProducts(allProducts) }, [allProducts])
 
   const filtered = useMemo(() => {
     let list = [...products]
@@ -344,7 +350,7 @@ export default function ProductsPage() {
             </thead>
             <tbody>
               {paged.map((p) => {
-                const cat = adminCategories.find((c) => c._id === p.category)
+                const cat = categories.find((c) => c._id === p.category)
                 const lowStock = p.stock <= (p.minStock || 15)
                 return (
                   <tr key={p._id} className="border-b border-black/3 last:border-0 hover:bg-primary/[0.02] transition-colors group">

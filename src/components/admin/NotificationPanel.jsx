@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Package, AlertTriangle, TicketPercent, UserRound, CheckCheck, Bell, X } from 'lucide-react'
-import { notifications as seed } from '../../data/adminData'
+import { useAdminData } from '../../context/AdminDataContext'
+import { timeAgo } from '../../utils/format'
 
 const TYPE_META = {
   order: { icon: Package, tint: 'bg-primary/10 text-primary' },
@@ -10,8 +11,18 @@ const TYPE_META = {
   customer: { icon: UserRound, tint: 'bg-secondary/10 text-secondary' },
 }
 
-export default function NotificationPanel() {
-  const [items, setItems] = useState(seed)
+export default function NotificationPanel({ notifications: notificationsProp }) {
+  const { notifications: ctxNotifications } = useAdminData()
+  const notifications = notificationsProp ?? ctxNotifications
+  const [items, setItems] = useState([])
+
+  useEffect(() => {
+    setItems((notifications || []).map((n) => ({
+      ...n,
+      id: n.id || n._id,
+      time: n.createdAt ? timeAgo(n.createdAt) : (n.time || ''),
+    })))
+  }, [notifications])
 
   const unreadCount = items.filter((n) => !n.read).length
   const markAll = () => setItems((prev) => prev.map((n) => ({ ...n, read: true })))

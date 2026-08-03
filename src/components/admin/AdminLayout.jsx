@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { LayoutDashboard, ClipboardList, Plus, Boxes, UserRound } from 'lucide-react'
 import { AdminProvider } from '../../context/AdminContext'
+import { AdminDataProvider } from '../../context/AdminDataContext'
 import { OrdersProvider } from '../../context/OrdersContext'
 import { CustomersProvider } from '../../context/CustomersContext'
 import { InventoryProvider } from '../../context/InventoryContext'
@@ -115,6 +116,7 @@ function AdminShell() {
 export default function AdminLayout() {
   return (
     <AdminProvider>
+      <AdminDataProvider>
       <OrdersProvider>
         <CustomersProvider>
           <InventoryProvider>
@@ -126,6 +128,7 @@ export default function AdminLayout() {
           </InventoryProvider>
         </CustomersProvider>
       </OrdersProvider>
+      </AdminDataProvider>
     </AdminProvider>
   )
 }

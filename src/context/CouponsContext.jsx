@@ -1,46 +1,69 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react'
-import { coupons as seedCoupons } from '../data/couponsData'
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
+import { couponApi } from '../api'
+import { getErrorMessage } from '../api/client'
 import { useToast } from './CartContext'
 
 const CouponsCtx = createContext(null)
 
 export function CouponsProvider({ children }) {
-  const [coupons, setCoupons] = useState(seedCoupons)
+  const [coupons, setCoupons] = useState([])
   const { addToast } = useToast()
+
+  useEffect(() => {
+    couponApi.list().then((list) => setCoupons(list || [])).catch(() => {})
+  }, [])
 
   const getCoupon = useCallback((id) => coupons.find((c) => c._id === id), [coupons])
 
   const addCoupon = useCallback((coupon) => {
-    const newCoupon = {
-      ...coupon,
-      _id: `cpn_${Date.now()}`,
-      usedCount: 0,
-      createdBy: 'adm_001',
-      createdAt: new Date().toISOString(),
-    }
-    setCoupons((prev) => [newCoupon, ...prev])
-    addToast('Coupon created successfully', 'success', 2800)
-    return newCoupon
+    return couponApi.create(coupon)
+      .then((newCoupon) => {
+        setCoupons((prev) => [newCoupon, ...prev])
+        addToast('Coupon created successfully', 'success', 2800)
+        return newCoupon
+      })
+      .catch((err) => {
+        addToast(getErrorMessage(err, 'Could not create coupon'), 'error', 3000)
+        throw err
+      })
   }, [addToast])
 
   const updateCoupon = useCallback((id, updates) => {
-    setCoupons((prev) => prev.map((c) => c._id === id ? { ...c, ...updates } : c))
-    addToast('Coupon updated', 'success', 2400)
+    couponApi.update(id, updates)
+      .then((updated) => {
+        setCoupons((prev) => prev.map((c) => c._id === id ? { ...c, ...updated } : c))
+        addToast('Coupon updated', 'success', 2400)
+      })
+      .catch((err) => addToast(getErrorMessage(err, 'Update failed'), 'error', 3000))
   }, [addToast])
 
   const toggleActive = useCallback((id) => {
-    setCoupons((prev) => prev.map((c) => c._id === id ? { ...c, active: !c.active } : c))
-    addToast('Coupon status toggled', 'success', 2200)
-  }, [addToast])
+    const c = coupons.find((x) => x._id === id)
+    if (!c) return
+    couponApi.update(id, { active: !c.active })
+      .then(() => {
+        setCoupons((prev) => prev.map((x) => x._id === id ? { ...x, active: !c.active } : x))
+        addToast('Coupon status toggled', 'success', 2200)
+      })
+      .catch((err) => addToast(getErrorMessage(err, 'Update failed'), 'error', 3000))
+  }, [coupons, addToast])
 
   const deleteCoupon = useCallback((id) => {
-    setCoupons((prev) => prev.filter((c) => c._id !== id))
-    addToast('Coupon deleted', 'info', 2400)
+    couponApi.remove(id)
+      .then(() => {
+        setCoupons((prev) => prev.filter((c) => c._id !== id))
+        addToast('Coupon deleted', 'info', 2400)
+      })
+      .catch((err) => addToast(getErrorMessage(err, 'Delete failed'), 'error', 3000))
   }, [addToast])
 
   const deleteCoupons = useCallback((ids) => {
-    setCoupons((prev) => prev.filter((c) => !ids.includes(c._id)))
-    addToast('Coupons deleted', 'info', 2400)
+    Promise.all(ids.map((id) => couponApi.remove(id)))
+      .then(() => {
+        setCoupons((prev) => prev.filter((c) => !ids.includes(c._id)))
+        addToast('Coupons deleted', 'info', 2400)
+      })
+      .catch((err) => addToast(getErrorMessage(err, 'Delete failed'), 'error', 3000))
   }, [addToast])
 
   const value = useMemo(() => ({

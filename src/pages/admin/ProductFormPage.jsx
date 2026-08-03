@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft, ChevronRight, Check, Leaf, Sun, Star, Sparkles, X, ImagePlus,
 } from 'lucide-react'
-import { adminProducts, adminCategories } from '../../data/productsData'
+import { useProducts } from '../../context/ProductsContext'
 import { useToast } from '../../context/CartContext'
 
 const STEPS = [
@@ -41,6 +41,7 @@ function StepIndicator({ current, steps }) {
 }
 
 function Step1({ form, set }) {
+  const { categories } = useProducts()
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-bold text-dark">Basic Information</h3>
@@ -51,7 +52,7 @@ function Step1({ form, set }) {
         <div><label className={labelClass}>Category *</label>
           <select value={form.category} onChange={(e) => set('category', e.target.value)} className={inputClass}>
             <option value="">Select category</option>
-            {adminCategories.map((c) => <option key={c._id} value={c._id}>{c.icon} {c.name}</option>)}
+            {categories.map((c) => <option key={c._id} value={c._id}>{c.icon} {c.name}</option>)}
           </select>
         </div>
         <div><label className={labelClass}>Subcategory</label><input className={inputClass} placeholder="e.g. Organic" value={form.subcategory} onChange={(e) => set('subcategory', e.target.value)} /></div>
@@ -199,45 +200,68 @@ function Step5({ form, set }) {
   )
 }
 
+const slugify = (str = '') => str.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+
+const parseNutrition = (str) => {
+  const s = str || ''
+  const val = (re) => { const m = s.match(re); return m ? m[1] : '' }
+  return {
+    calories: Number(val(/(\d+(?:\.\d+)?)\s*cal/i)) || 0,
+    protein: val(/([\d.]+)\s*g\s*protein/i) || '0g',
+    carbs: val(/([\d.]+)\s*g\s*carbs?/i) || '0g',
+    fiber: val(/([\d.]+)\s*g\s*fiber/i) || '0g',
+    fat: val(/([\d.]+)\s*g\s*fat/i) || '0g',
+  }
+}
+
+const buildInitialForm = (existing) => ({
+  name: existing?.name || '',
+  description: existing?.description || '',
+  shortDesc: '',
+  category: existing?.category || '',
+  subcategory: '',
+  tags: existing?.tags?.join(', ') || '',
+  price: existing?.sellingPrice || '',
+  mrp: existing?.mrp || '',
+  tax: existing?.tax || '',
+  weights: existing?.weightOptions || [],
+  stock: existing?.stock ?? '',
+  minStock: existing?.minStock || '',
+  sku: existing?.sku || '',
+  barcode: existing?.barcode || '',
+  images: existing?.emoji ? [{ emoji: existing.emoji, name: 'main' }] : [],
+  nutrition: existing?.nutrition ? `${existing.nutrition.calories} cal, ${existing.nutrition.protein} protein` : '',
+  origin: existing?.origin || '',
+  storage: existing?.storage || '',
+  shelfLife: existing?.shelfLife || '',
+  benefits: existing?.benefits?.join(', ') || '',
+  organic: existing?.organic || false,
+  freshToday: existing?.freshToday || false,
+  bestSeller: existing?.bestSeller || false,
+  todaysPick: existing?.todaysPick || false,
+  featured: existing?.featured || false,
+  gradient: existing?.gradient || ['#4CAF50', '#2E7D32'],
+})
+
 export default function ProductFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToast } = useToast()
+  const { categories, productById, saveProduct } = useProducts()
   const isEdit = !!id
-  const existing = isEdit ? adminProducts.find((p) => p._id === id) : null
+  const existing = isEdit ? productById(id) : null
 
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState(() => ({
-    name: existing?.name || '',
-    description: existing?.description || '',
-    shortDesc: '',
-    category: existing?.category || '',
-    subcategory: '',
-    tags: existing?.tags?.join(', ') || '',
-    price: existing?.sellingPrice || '',
-    mrp: existing?.mrp || '',
-    tax: existing?.tax || '',
-    weights: existing?.weightOptions || [],
-    stock: existing?.stock ?? '',
-    minStock: existing?.minStock || '',
-    sku: existing?.sku || '',
-    barcode: existing?.barcode || '',
-    images: existing?.emoji ? [{ emoji: existing.emoji, name: 'main' }] : [],
-    nutrition: existing?.nutrition ? `${existing.nutrition.calories} cal, ${existing.nutrition.protein} protein` : '',
-    origin: existing?.origin || '',
-    storage: existing?.storage || '',
-    shelfLife: existing?.shelfLife || '',
-    benefits: existing?.benefits?.join(', ') || '',
-    organic: existing?.organic || false,
-    freshToday: existing?.freshToday || false,
-    bestSeller: existing?.bestSeller || false,
-    todaysPick: existing?.todaysPick || false,
-    featured: existing?.featured || false,
-    gradient: existing?.gradient || ['#4CAF50', '#2E7D32'],
-  }))
+  const [form, setForm] = useState(() => buildInitialForm(existing))
+  const touched = useRef(false)
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+  const set = (k, v) => { touched.current = true; setForm((f) => ({ ...f, [k]: v })) }
+
+  useEffect(() => {
+    if (existing && !touched.current) setForm(buildInitialForm(existing))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing])
 
   const canNext = () => {
     if (step === 1) return form.name && form.description && form.category
@@ -246,13 +270,49 @@ export default function ProductFormPage() {
     return true
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true)
-    setTimeout(() => {
+    try {
+      const cat = categories.find((c) => c._id === form.category)
+      await saveProduct({
+        _id: existing?._id,
+        name: form.name,
+        description: form.description,
+        shortDesc: form.shortDesc,
+        category: form.category,
+        categoryName: cat?.name,
+        slug: existing?.slug || slugify(form.name),
+        tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+        sellingPrice: Number(form.price) || 0,
+        mrp: Number(form.mrp) || 0,
+        tax: Number(form.tax) || 0,
+        weightOptions: form.weights,
+        stock: Number(form.stock) || 0,
+        minStock: Number(form.minStock) || 10,
+        sku: form.sku,
+        barcode: form.barcode,
+        images: form.images.map((img) => img.emoji || img.url || img.name),
+        emoji: existing?.emoji || cat?.icon || '🛒',
+        gradient: form.gradient || ['#4CAF50', '#2E7D32'],
+        nutrition: parseNutrition(form.nutrition),
+        origin: form.origin,
+        storage: form.storage,
+        shelfLife: form.shelfLife,
+        benefits: form.benefits.split(',').map((b) => b.trim()).filter(Boolean),
+        organic: form.organic,
+        freshToday: form.freshToday,
+        bestSeller: form.bestSeller,
+        todaysPick: form.todaysPick,
+        featured: form.featured,
+        status: existing?.status || 'published',
+      })
       addToast(isEdit ? 'Product updated successfully' : 'Product created successfully', 'success')
-      setSaving(false)
       navigate('/admin/products')
-    }, 1200)
+    } catch (err) {
+      addToast(err?.response?.data?.message || 'Could not save product', 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const renderStep = () => {

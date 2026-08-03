@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, X, ArrowRight, Leaf, SlidersHorizontal, Grid3X3, List, Search, Sparkles } from 'lucide-react'
-import products from '../data/products'
+import { useProducts } from '../context/ProductsContext'
 import ProductCard from '../components/shop/ProductCard'
 import FilterSidebar from '../components/shop/FilterSidebar'
 import Footer from '../components/Footer'
@@ -36,6 +36,7 @@ function FloatingLeaf({ style, delay = 0 }) {
 }
 
 export default function VegetablesPage() {
+  const { products } = useProducts()
   const [filters, setFilters] = useState(defaultFilters)
   const [viewMode, setViewMode] = useState('grid')
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
@@ -65,7 +66,7 @@ export default function VegetablesPage() {
       default: break
     }
     return list
-  }, [filters])
+  }, [filters, products])
 
   const activeFilterCount = [
     filters.category, filters.priceMin, filters.priceMax,

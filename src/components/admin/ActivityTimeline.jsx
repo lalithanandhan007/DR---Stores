@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ShoppingBag, AlertTriangle, UserPlus, Package, TicketPercent, Undo2 } from 'lucide-react'
-import { activity } from '../../data/adminData'
+import { useAdminData } from '../../context/AdminDataContext'
+import { timeAgo } from '../../utils/format'
 
 const TYPE_META = {
   order: { icon: ShoppingBag, tint: 'bg-primary/10 text-primary' },
@@ -12,6 +13,13 @@ const TYPE_META = {
 }
 
 export default function ActivityTimeline() {
+  const { activity: rawActivity } = useAdminData()
+  const activity = rawActivity.map((a) => ({
+    ...a,
+    id: a._id,
+    time: timeAgo(a.timestamp || a.createdAt),
+    note: a.note || a.detail,
+  }))
   return (
     <div className="bg-white rounded-3xl border border-black/5 shadow-soft p-5 sm:p-6">
       <h3 className="text-sm font-bold text-dark mb-5">Recent Activity</h3>

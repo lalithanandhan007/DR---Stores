@@ -1,8 +1,9 @@
+import { useMemo } from 'react'
 import {
   Area, AreaChart, Line, LineChart, Bar, BarChart, Pie, PieChart, Cell,
   ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid,
 } from 'recharts'
-import { weeklyRevenue, monthlyRevenue, ordersTrend, categoryDistribution, salesOverview } from '../../data/adminData'
+import { useAdminData } from '../../context/AdminDataContext'
 
 const inr = (v) => `₹${v.toLocaleString('en-IN')}`
 
@@ -31,6 +32,7 @@ const axis = { fontSize: 10, fill: '#9CA3AF' }
 const grid = { stroke: 'rgba(27,27,27,0.05)', vertical: false }
 
 export function WeeklyRevenueChart() {
+  const { weeklyRevenue } = useAdminData()
   return (
     <ResponsiveContainer width="100%" height={240}>
       <AreaChart data={weeklyRevenue} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
@@ -51,6 +53,7 @@ export function WeeklyRevenueChart() {
 }
 
 export function MonthlyRevenueChart() {
+  const { monthlyRevenue } = useAdminData()
   return (
     <ResponsiveContainer width="100%" height={250}>
       <AreaChart data={monthlyRevenue} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
@@ -71,6 +74,7 @@ export function MonthlyRevenueChart() {
 }
 
 export function OrdersTrendChart() {
+  const { ordersTrend } = useAdminData()
   return (
     <ResponsiveContainer width="100%" height={240}>
       <LineChart data={ordersTrend} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
@@ -86,6 +90,17 @@ export function OrdersTrendChart() {
 }
 
 export function SalesOverviewChart() {
+  const { monthlyRevenue } = useAdminData()
+  const salesOverview = useMemo(() => {
+    const data = monthlyRevenue || []
+    const thisMonth = data.slice(-6)
+    const lastMonth = data.slice(-12, -6)
+    return thisMonth.map((m, i) => ({
+      name: m.month,
+      current: m.revenue,
+      previous: lastMonth[i]?.revenue || 0,
+    }))
+  }, [monthlyRevenue])
   return (
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={salesOverview} barGap={6} margin={{ top: 6, right: 6, left: 0, bottom: 0 }}>
@@ -101,6 +116,7 @@ export function SalesOverviewChart() {
 }
 
 export function CategoryDistributionChart() {
+  const { categoryDistribution } = useAdminData()
   return (
     <ResponsiveContainer width="100%" height={240}>
       <PieChart>

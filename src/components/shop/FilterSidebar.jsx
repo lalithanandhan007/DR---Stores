@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Search, X, SlidersHorizontal } from 'lucide-react'
-import { categories } from '../../data/products'
+import { useProducts } from '../../context/ProductsContext'
 
 function FilterGroup({ title, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
@@ -50,6 +50,10 @@ function Checkbox({ label, checked, onChange, count }) {
 }
 
 export default function FilterSidebar({ filters, setFilters }) {
+  const { products, categories: catDocs } = useProducts()
+  const categories = catDocs?.length
+    ? catDocs.map((c) => c.name)
+    : [...new Set(products.map((p) => p.category))]
   const set = (key, val) => setFilters((f) => ({ ...f, [key]: val }))
   const toggleArr = (key, val) => {
     setFilters((f) => {

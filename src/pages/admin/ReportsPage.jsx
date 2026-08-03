@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { REPORT_CATEGORIES, reportTemplates, mockReportData } from '../../data/reportsData'
 import { useToast } from '../../context/CartContext'
+import { useAdminData } from '../../context/AdminDataContext'
 import { inr } from '../../utils/format'
 
 const ICON_MAP = { receipt: Receipt, wallet: Wallet, clipboard: ClipboardList, users: Users, box: Box, truck: Truck }
@@ -13,7 +14,23 @@ const ICON_MAP = { receipt: Receipt, wallet: Wallet, clipboard: ClipboardList, u
 /* ================= REPORT PREVIEW MODAL ================= */
 function ReportPreview({ report, onClose }) {
   const { addToast } = useToast()
-  const data = mockReportData[report._id]
+  const { statCards, analytics } = useAdminData()
+  const stat = (id) => statCards.find((s) => s.id === id)?.value
+  const seedData = mockReportData[report._id]
+  const data = seedData ? {
+    ...seedData,
+    summary: {
+      ...seedData.summary,
+      totalSales: stat('revenue') || seedData.summary.totalSales,
+      totalOrders: stat('orders') || seedData.summary.totalOrders,
+      avgOrder: stat('aov') || seedData.summary.avgOrder,
+    },
+    topProducts: (analytics?.topProducts?.length ? analytics.topProducts.slice(0, 5) : seedData.topProducts).map((p) => ({
+      name: p.name,
+      qty: p.qty ?? p.sold ?? 0,
+      revenue: p.revenue,
+    })),
+  } : null
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[90] flex items-center justify-center p-4">

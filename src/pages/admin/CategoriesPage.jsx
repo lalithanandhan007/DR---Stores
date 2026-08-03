@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, GripVertical, X, Eye, EyeOff } from 'lucide-react'
-import { adminCategories } from '../../data/productsData'
+import { useProducts } from '../../context/ProductsContext'
+import { productApi } from '../../api'
 import { SectionHeader } from '../../components/admin/ui'
 import { useToast } from '../../context/CartContext'
 
 const inputClass = 'w-full h-11 px-4 rounded-xl bg-cream border border-black/8 text-sm text-dark placeholder:text-dark/30 focus:outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all'
 const EMOJI_OPTIONS = ['🥬', '🥕', '🍅', '🥒', '🧄', '🌿', '🍄', '🍚', '🫑', '🌽', '🍋', '🧅', '🥦', '🫛', '🌶️', '🍆']
+const slugify = (str = '') => str.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
 /* ================= ADD / EDIT MODAL ================= */
 function CategoryModal({ category, onClose, onSave }) {
@@ -77,30 +79,63 @@ function DeleteConfirm({ category, onClose, onConfirm }) {
 /* ================= MAIN CATEGORIES PAGE ================= */
 export default function CategoriesPage() {
   const { addToast } = useToast()
-  const [categories, setCategories] = useState(adminCategories)
+  const { categories: ctxCategories, refresh } = useProducts()
+  const [categories, setCategories] = useState(ctxCategories)
   const [editing, setEditing] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
   const [deleting, setDeleting] = useState(null)
 
-  const handleSave = (form) => {
-    if (editing) {
-      setCategories((prev) => prev.map((c) => c._id === editing._id ? { ...c, ...form } : c))
-      addToast('Category updated', 'success')
-    } else {
-      const newCat = { ...form, _id: `cat_${Date.now()}`, slug: form.name.toLowerCase().replace(/\s+/g, '-'), order: categories.length + 1, visible: true, productCount: 0 }
-      setCategories((prev) => [...prev, newCat])
-      addToast('Category added', 'success')
+  useEffect(() => { setCategories(ctxCategories) }, [ctxCategories])
+
+  const handleSave = async (form) => {
+    try {
+      if (editing) {
+        const updated = await productApi.updateCategory(editing._id, {
+          name: form.name,
+          icon: form.icon,
+          color: form.color,
+          slug: editing.slug || slugify(form.name),
+        })
+        setCategories((prev) => prev.map((c) => c._id === updated._id ? updated : c))
+        addToast('Category updated', 'success')
+      } else {
+        const created = await productApi.createCategory({
+          name: form.name,
+          icon: form.icon,
+          color: form.color,
+          slug: slugify(form.name),
+          order: Math.max(0, ...categories.map((c) => c.order || 0)) + 1,
+          visible: true,
+        })
+        setCategories((prev) => [...prev, created])
+        addToast('Category added', 'success')
+      }
+      refresh()
+    } catch (err) {
+      addToast(err?.response?.data?.message || 'Could not save category', 'error')
     }
     setEditing(null); setShowAdd(false)
   }
 
-  const handleDelete = (cat) => {
-    setCategories((prev) => prev.filter((c) => c._id !== cat._id))
-    addToast(`"${cat.name}" deleted`, 'info')
+  const handleDelete = async (cat) => {
+    try {
+      await productApi.deleteCategory(cat._id)
+      setCategories((prev) => prev.filter((c) => c._id !== cat._id))
+      addToast(`"${cat.name}" deleted`, 'info')
+      refresh()
+    } catch (err) {
+      addToast(err?.response?.data?.message || 'Could not delete category', 'error')
+    }
   }
 
-  const toggleVisible = (cat) => {
-    setCategories((prev) => prev.map((c) => c._id === cat._id ? { ...c, visible: !c.visible } : c))
+  const toggleVisible = async (cat) => {
+    try {
+      const updated = await productApi.updateCategory(cat._id, { visible: !cat.visible })
+      setCategories((prev) => prev.map((c) => c._id === updated._id ? updated : c))
+      refresh()
+    } catch (err) {
+      addToast(err?.response?.data?.message || 'Could not update category', 'error')
+    }
   }
 
   return (

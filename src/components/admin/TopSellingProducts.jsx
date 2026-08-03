@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion'
 import { TrendingUp, TrendingDown, BarChart3 } from 'lucide-react'
-import { topProducts } from '../../data/adminData'
+import { useAdminData } from '../../context/AdminDataContext'
 
 export default function TopSellingProducts() {
+  const { topProducts: rawTopProducts } = useAdminData()
+  const topProducts = rawTopProducts.map((p) => ({ ...p, _id: p._id || p.name }))
   const maxRevenue = Math.max(...topProducts.map((p) => p.revenue))
   return (
     <div className="space-y-3">

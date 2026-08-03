@@ -14,7 +14,7 @@ import { ROLES } from '../../context/AuthContext'
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function LoginPage() {
-  const { login, sendOtp, findAccount, continueAsGuest } = useAuth()
+  const { login, sendOtp, findAccount, loginWithPassword, continueAsGuest } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
@@ -52,7 +52,7 @@ export default function LoginPage() {
   }
 
   /* ---------- Email + Password ---------- */
-  const handleEmailLogin = () => {
+  const handleEmailLogin = async () => {
     const errs = {}
     if (!email) errs.email = 'Email is required'
     else if (!emailRegex.test(email)) errs.email = 'Enter a valid email address'
@@ -61,24 +61,19 @@ export default function LoginPage() {
     if (Object.keys(errs).length) return
 
     setBusy(true)
-    setTimeout(() => {
-      const account = findAccount(email)
-      if (!account) {
-        setErrors({ email: 'No account found. Please register first.' })
-        addToast('Account not found', 'info')
-        setBusy(false)
-        return
-      }
-      if (account.password !== password) {
-        setErrors({ password: 'Incorrect password. Please try again.' })
-        setBusy(false)
-        return
-      }
-      if (remember) localStorage.setItem('dr-remember-email', email)
-      else localStorage.removeItem('dr-remember-email')
-      setBusy(false)
-      finishLogin({ id: 'usr_' + email.replace(/[^a-z0-9]/gi, ''), name: account.name, email: account.email, phone: account.phone, memberSince: account.memberSince })
-    }, 1200)
+    if (remember) localStorage.setItem('dr-remember-email', email)
+    else localStorage.removeItem('dr-remember-email')
+    const result = await loginWithPassword(email, password)
+    setBusy(false)
+    if (result.success) {
+      addToast(`Welcome back, ${result.user.name.split(' ')[0]}! 👋`, 'success', 3500)
+      setSuccess(true)
+      setTimeout(() => navigate(from, { replace: true }), 1200)
+    } else {
+      const isPw = /password|credentials/i.test(result.message)
+      setErrors(isPw ? { password: result.message } : { email: result.message })
+      addToast(result.message, 'error', 3200)
+    }
   }
 
   /* ---------- Google (simulated) ---------- */

@@ -1,87 +1,58 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react'
-import { inventory as seedInventory, stockHistory as seedHistory } from '../data/inventoryData'
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
+import { inventoryApi } from '../api'
+import { getErrorMessage } from '../api/client'
 import { useToast } from './CartContext'
 
 const InventoryCtx = createContext(null)
 
 export function InventoryProvider({ children }) {
-  const [inventory, setInventory] = useState(seedInventory)
-  const [history, setHistory] = useState(seedHistory)
+  const [inventory, setInventory] = useState([])
+  const [history, setHistory] = useState([])
   const { addToast } = useToast()
+
+  const load = useCallback(() => {
+    inventoryApi.list().then((items) => setInventory(items || [])).catch(() => {})
+    inventoryApi.history().then((h) => setHistory(h || [])).catch(() => {})
+  }, [])
+
+  useEffect(() => { load() }, [load])
 
   const getItem = useCallback((id) => inventory.find((i) => i._id === id), [inventory])
 
   const restock = useCallback((itemId, qty) => {
     if (qty <= 0) return
-    setInventory((prev) => prev.map((i) => {
-      if (i._id !== itemId) return i
-      const newStock = i.currentStock + qty
-      return {
-        ...i,
-        currentStock: newStock,
-        status: newStock <= 0 ? 'out_of_stock' : newStock < i.minStock ? 'low' : 'in_stock',
-        lastRestocked: new Date().toISOString(),
-      }
-    }))
-    setHistory((prev) => {
-      const item = inventory.find((i) => i._id === itemId)
-      const entry = {
-        _id: `SH-${Date.now()}`,
-        productId: item?.productName || '',
-        type: 'restock',
-        quantity: qty,
-        reason: 'Manual restock',
-        performedBy: 'Ramesh Anandhan',
-        timestamp: new Date().toISOString(),
-      }
-      return [entry, ...prev]
-    })
-    addToast(`Stock increased by ${qty} units`, 'success', 2600)
-  }, [inventory, addToast])
-
-  const bulkRestock = useCallback((ids, qty) => {
-    setInventory((prev) => prev.map((i) => {
-      if (!ids.includes(i._id)) return i
-      const newStock = i.currentStock + qty
-      return {
-        ...i,
-        currentStock: newStock,
-        status: newStock <= 0 ? 'out_of_stock' : newStock < i.minStock ? 'low' : 'in_stock',
-        lastRestocked: new Date().toISOString(),
-      }
-    }))
-    addToast(`${ids.length} items restocked by ${qty} units`, 'success', 2800)
-  }, [addToast])
+    inventoryApi.restock(itemId, qty)
+      .then((item) => {
+        setInventory((prev) => prev.map((i) => (i._id === itemId ? { ...i, ...item } : i)))
+        load()
+        addToast(`Stock increased by ${qty} units`, 'success', 2600)
+      })
+      .catch((err) => addToast(getErrorMessage(err, 'Restock failed'), 'error', 3000))
+  }, [addToast, load])
 
   const adjustStock = useCallback((itemId, qty, reason) => {
-    setInventory((prev) => prev.map((i) => {
-      if (i._id !== itemId) return i
-      const newStock = Math.max(0, i.currentStock + qty)
-      return {
-        ...i,
-        currentStock: newStock,
-        status: newStock <= 0 ? 'out_of_stock' : newStock < i.minStock ? 'low' : 'in_stock',
-      }
-    }))
-    setHistory((prev) => {
-      const item = inventory.find((i) => i._id === itemId)
-      const entry = {
-        _id: `SH-${Date.now()}`,
-        productId: item?.productName || '',
-        type: qty > 0 ? 'manual' : 'damaged',
-        quantity: qty,
-        reason: reason || 'Manual adjustment',
-        performedBy: 'Ramesh Anandhan',
-        timestamp: new Date().toISOString(),
-      }
-      return [entry, ...prev]
-    })
-    addToast('Stock adjusted', 'success', 2400)
-  }, [inventory, addToast])
+    inventoryApi.adjust(itemId, qty, reason)
+      .then((item) => {
+        setInventory((prev) => prev.map((i) => (i._id === itemId ? { ...i, ...item } : i)))
+        load()
+        addToast('Stock adjusted', 'success', 2400)
+      })
+      .catch((err) => addToast(getErrorMessage(err, 'Adjustment failed'), 'error', 3000))
+  }, [addToast, load])
+
+  const bulkRestock = useCallback((ids, qty) => {
+    inventoryApi.bulkRestock(ids, qty)
+      .then(() => {
+        setInventory((prev) => prev.map((i) => ids.includes(i._id) ? { ...i, currentStock: i.currentStock + Number(qty), lastRestocked: new Date().toISOString() } : i))
+        load()
+        addToast(`Stock increased by ${qty} units on ${ids.length} items`, 'success', 2600)
+      })
+      .catch((err) => addToast(getErrorMessage(err, 'Bulk restock failed'), 'error', 3000))
+  }, [addToast, load])
 
   const value = useMemo(() => ({
-    inventory, history, getItem, restock, bulkRestock, adjustStock,
-  }), [inventory, history, getItem, restock, bulkRestock, adjustStock])
+    inventory, history, getItem, restock, adjustStock, bulkRestock,
+  }), [inventory, history, getItem, restock, adjustStock, bulkRestock])
 
   return <InventoryCtx.Provider value={value}>{children}</InventoryCtx.Provider>
 }

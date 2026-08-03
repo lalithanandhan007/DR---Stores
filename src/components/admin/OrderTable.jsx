@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MoreHorizontal, ArrowUpRight } from 'lucide-react'
-import { recentOrders } from '../../data/adminData'
+import { useOrders } from '../../context/OrdersContext'
+import { formatTime } from '../../utils/format'
 
 const STATUS = {
   delivered: { label: 'Delivered', cls: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
@@ -11,8 +12,20 @@ const STATUS = {
   cancelled: { label: 'Cancelled', cls: 'bg-red-50 text-red-500 border-red-200' },
 }
 
-export default function OrderTable() {
+export default function OrderTable({ orders: ordersProp }) {
+  const { orders: ctxOrders } = useOrders()
   const navigate = useNavigate()
+  const recentOrders = (ordersProp || ctxOrders || []).slice(0, 7).map((o) => ({
+    _id: o._id,
+    avatar: o.avatar || o.customer?.avatar || '',
+    customer: typeof o.customer === 'string' ? o.customer : (o.customer?.name || '—'),
+    emoji: o.emoji || (Array.isArray(o.items) && o.items[0]?.emoji) || '🛒',
+    items: typeof o.items === 'number' ? o.items : (Array.isArray(o.items) ? o.items.reduce((s, it) => s + (it.qty || 0), 0) : 0),
+    amount: o.amount ?? o.grandTotal ?? 0,
+    payment: typeof o.payment === 'string' ? o.payment : (o.payment?.method || '—'),
+    status: o.status,
+    delivery: typeof o.delivery === 'string' ? o.delivery : (o.delivery?.slot?.label || formatTime(o.delivery?.expectedAt)),
+  }))
   return (
     <div className="bg-white rounded-3xl border border-black/5 shadow-soft overflow-hidden">
       <div className="overflow-x-auto admin-scroll">

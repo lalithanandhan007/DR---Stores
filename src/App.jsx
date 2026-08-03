@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Leaf } from 'lucide-react'
 import { CartProvider, ToastProvider, RecentProvider } from './context/CartContext'
 import { AuthProvider, WishlistProvider, SettingsProvider } from './context/AuthContext'
+import { ProductsProvider } from './context/ProductsContext'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage from './pages/LandingPage'
@@ -93,6 +94,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ProductsProvider>
         <CartProvider>
           <ToastProvider>
             <RecentProvider>
@@ -160,6 +162,7 @@ function App() {
             </RecentProvider>
           </ToastProvider>
         </CartProvider>
+        </ProductsProvider>
       </AuthProvider>
     </BrowserRouter>
   )

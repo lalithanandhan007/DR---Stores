@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Sparkles, Plus, TicketPercent, ClipboardList, Store, ChevronRight, CalendarDays } from 'lucide-react'
-import { statCards, storeStatus, adminProfile, categoryDistribution } from '../../data/adminData'
+import { useAdminData } from '../../context/AdminDataContext'
 import StatCard from '../../components/admin/StatCard'
 import ChartCard from '../../components/admin/ChartCard'
 import {
@@ -19,6 +19,7 @@ import { Reveal, SectionHeader } from '../../components/admin/ui'
 import { useAdmin } from '../../context/AdminContext'
 
 function StatusToggle() {
+  const { storeStatus } = useAdminData()
   const [open, setOpen] = useState(storeStatus.open)
   return (
     <button
@@ -40,6 +41,7 @@ function StatusToggle() {
 export default function AdminDashboardPage() {
   const { openModule } = useAdmin()
   const navigate = useNavigate()
+  const { statCards, storeStatus, adminProfile } = useAdminData()
   const firstName = adminProfile.name.split(' ')[0]
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -197,6 +199,7 @@ function LegendDots({ dots }) {
 }
 
 function CategoryLegend() {
+  const { categoryDistribution } = useAdminData()
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 w-full max-w-xs">
       {categoryDistribution.map((c) => (

@@ -4,7 +4,8 @@ import {
   Search, Filter, Download, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, X,
   UserRound, ShoppingBag, Box, Users, ClipboardList, TicketPercent, Truck, Settings, AlertTriangle,
 } from 'lucide-react'
-import { ACTIVITY_TYPES, getActivityTypeMeta, activityLogs, severityColors } from '../../data/activityData'
+import { ACTIVITY_TYPES, getActivityTypeMeta, severityColors } from '../../data/activityData'
+import { useAdminData } from '../../context/AdminDataContext'
 import { useToast } from '../../context/CartContext'
 import { formatDateTime } from '../../utils/format'
 
@@ -34,6 +35,7 @@ function KpiStrip({ counts, typeFilter, onSelect }) {
 /* ================= MAIN PAGE ================= */
 export default function ActivityLogsPage() {
   const { addToast } = useToast()
+  const { activity: activityLogs } = useAdminData()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [severityFilter, setSeverityFilter] = useState('')
@@ -47,7 +49,7 @@ export default function ActivityLogsPage() {
     for (const t of ACTIVITY_TYPES) c[t.value] = 0
     for (const l of activityLogs) c[l.type] = (c[l.type] || 0) + 1
     return c
-  }, [])
+  }, [activityLogs])
 
   const filtered = useMemo(() => {
     let list = [...activityLogs]

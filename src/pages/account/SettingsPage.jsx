@@ -75,7 +75,7 @@ export default function SettingsPage() {
   const handleDelete = () => {
     setDeleting(true)
     setTimeout(() => {
-      ;['dr-user', 'dr-role', 'dr-accounts', 'dr-wishlist', 'dr-orders', 'dr-addresses', 'dr-default-address', 'dr-settings', 'dr-pending-otp', 'dr-pending-registration']
+      ;['dr-user', 'dr-role', 'dr-token', 'dr-accounts', 'dr-wishlist', 'dr-orders', 'dr-addresses', 'dr-default-address', 'dr-settings', 'dr-pending-otp', 'dr-pending-registration']
         .forEach((k) => localStorage.removeItem(k))
       setDeleting(false)
       logout()
@@ -150,9 +150,9 @@ export default function SettingsPage() {
               <button onClick={() => setShowPrivacy(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-dark/30 hover:bg-black/5 transition-colors"><X className="w-4 h-4" /></button>
               <h3 className="font-serif-display text-2xl font-bold text-dark mb-3">Privacy Policy</h3>
               <div className="text-sm text-dark/55 leading-relaxed space-y-3 max-h-72 overflow-y-auto pr-2">
-                <p><b className="text-dark">What we store.</b> This is a demo — all data lives in your browser's localStorage. Nothing is sent to any server.</p>
-                <p><b className="text-dark">Your data.</b> Name, email, phone, address and order history are stored locally so the app remembers you between visits.</p>
-                <p><b className="text-dark">Clearing data.</b> Deleting your account removes all stored data. You can also clear browser storage manually.</p>
+                <p><b className="text-dark">What we store.</b> Your account, orders, addresses, wishlist and preferences are stored securely in a MongoDB database. Only a session token is kept in your browser.</p>
+                <p><b className="text-dark">Your data.</b> Name, email, phone, address and order history are used to power the storefront and your account dashboard.</p>
+                <p><b className="text-dark">Clearing data.</b> Deleting your account removes your stored data and signs you out.</p>
               </div>
               <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowPrivacy(false)} className="mt-6 w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold">Got it</motion.button>
             </motion.div>

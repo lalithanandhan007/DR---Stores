@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/CartContext'
 
 export default function ResetPasswordPage() {
-  const { resetPassword, findAccount } = useAuth()
+  const { resetPassword } = useAuth()
   const { addToast } = useToast()
   const location = useLocation()
   const identifier = location.state?.identifier || ''
@@ -21,7 +21,7 @@ export default function ResetPasswordPage() {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const errs = {}
     if (password.length < 6) errs.password = 'Password must be at least 6 characters'
     if (confirm !== password) errs.confirm = 'Passwords do not match'
@@ -29,22 +29,14 @@ export default function ResetPasswordPage() {
     if (Object.keys(errs).length) return
 
     setBusy(true)
-    setTimeout(() => {
-      // Ensure an account exists for email identifiers (so sign-in works afterwards)
-      if (identifier.includes('@') && !findAccount(identifier)) {
-        setBusy(false)
-        setErrors({ password: 'No account found for this email. Please register instead.' })
-        return
-      }
-      const result = resetPassword(identifier, password)
-      setBusy(false)
-      if (result.success) {
-        addToast('Password updated successfully!', 'success', 3000)
-        setDone(true)
-      } else {
-        setErrors({ password: result.message })
-      }
-    }, 1400)
+    const result = await resetPassword(identifier, password)
+    setBusy(false)
+    if (result.success) {
+      addToast('Password updated successfully!', 'success', 3000)
+      setDone(true)
+    } else {
+      setErrors({ password: result.message })
+    }
   }
 
   if (done) {
