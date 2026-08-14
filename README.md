@@ -52,9 +52,9 @@ Open http://localhost:5173
 
 | Role | Email | Password |
 |---|---|---|
-| Admin | `admin@drstores.com` | `demo123` |
-| Customer | `priya.sharma@gmail.com` | `demo123` |
-| Demo customer | `demo@drstores.com` | `demo123` |
+| Admin | [configured admin account]
+| Customer | `customer@gmail.com` |
+| Demo customer | `demo@drstores.com` |
 
 Phone OTP logins are simulated (no SMS provider) — the 6-digit code is returned by the API and shown as a "demo OTP" in the UI.
 

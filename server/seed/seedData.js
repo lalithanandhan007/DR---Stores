@@ -48,7 +48,7 @@ async function seed() {
   const hash = await bcrypt.hash('demo123', 12);
 
   const users = [
-    { _id: 'adm_001', name: 'Ramesh Anandhan', email: 'admin@drstores.com', phone: '+91 98765 43210', password: hash, role: 'admin', tag: 'premium' },
+    { _id: 'adm_001', name: 'Lalith Anandhan', email: 'lalithanandhan176@gmail.com', phone: '+91 80562 49349', password: hash, role: 'admin', tag: 'premium' },
     { _id: 'cus_001', name: 'Priya Sharma', email: 'priya.sharma@gmail.com', phone: '+91 98400 12345', password: hash, role: 'customer', tag: 'vip', notes: ['Loves organic vegetables', 'Prefers morning delivery slots'] },
     { _id: 'cus_002', name: 'Arjun Mehta', email: 'arjun.mehta@outlook.com', phone: '+91 98840 99881', password: hash, role: 'customer', tag: 'premium', notes: ['Frequent exotic vegetable buyer'] },
     { _id: 'cus_003', name: 'Sneha Rao', email: 'sneha.rao@yahoo.com', phone: '+91 99001 22334', password: hash, role: 'customer', tag: 'regular' },
@@ -61,7 +61,6 @@ async function seed() {
     { _id: 'cus_010', name: 'Suresh Kumar', email: 'suresh.k@gmail.com', phone: '+91 99940 88990', password: hash, role: 'customer', tag: 'regular', blocked: true, notes: ['Blocked due to repeated returns'] },
     { _id: 'cus_011', name: 'Anita Verma', email: 'anita.verma@gmail.com', phone: '+91 98650 22331', password: hash, role: 'customer', tag: 'premium', notes: ['Exotic vegetables enthusiast'] },
     { _id: 'cus_012', name: 'Vignesh Raja', email: 'vignesh.r@gmail.com', phone: '+91 95000 44556', password: hash, role: 'customer', tag: 'new', notes: ['Requested raw banana availability notification'] },
-    { _id: 'demo_001', name: 'Demo Customer', email: 'demo@drstores.com', phone: '+91 9876543210', password: hash, role: 'customer', tag: 'new', notes: ['Demo account shown on the login screen'] },
   ];
   await User.insertMany(users);
   console.log(`✓ ${users.length} users seeded`);
@@ -318,8 +317,6 @@ async function seed() {
 
   console.log('\n🎉 Seed complete!');
   console.log('─'.repeat(40));
-  console.log('Admin login: admin@drstores.com / demo123');
-  console.log('Customer login: priya.sharma@gmail.com / demo123');
   console.log('─'.repeat(40));
 
   await mongoose.disconnect();

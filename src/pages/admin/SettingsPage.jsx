@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Save, Store, Truck, CreditCard, Bell, Palette, Shield, Clock, MapPin, Phone, Mail,
   Globe, AlertTriangle, Check, Upload,
 } from 'lucide-react'
 import { defaultSettings, DAY_LABELS } from '../../data/settingsData'
+import { settingsApi } from '../../api'
 import { useToast } from '../../context/CartContext'
 
 function Section({ title, subtitle, icon: Icon, children, delay = 0 }) {
@@ -39,12 +40,39 @@ function Toggle({ value, onChange }) {
 export default function SettingsPage() {
   const { addToast } = useToast()
   const [settings, setSettings] = useState(defaultSettings)
+  const [settingsLoading, setSettingsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const set = (k, v) => setSettings((s) => ({ ...s, [k]: v }))
 
-  const handleSave = () => {
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const data = await settingsApi.get()
+        if (data) setSettings(data)
+      } catch (error) {
+        console.error('Failed to load store settings:', error)
+        addToast('Failed to load store settings', 'error', 3000)
+      } finally {
+        setSettingsLoading(false)
+      }
+    }
+  
+    loadSettings()
+  }, [])
+
+  const handleSave = async () => {
     setSaving(true)
-    setTimeout(() => { setSaving(false); addToast('Settings saved successfully', 'success', 2800) }, 1000)
+  
+    try {
+      const updated = await settingsApi.update(settings)
+      setSettings(updated)
+      addToast('Settings saved successfully', 'success', 2800)
+    } catch (error) {
+      console.error('Failed to save store settings:', error)
+      addToast('Failed to save settings. Please try again.', 'error', 3500)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (

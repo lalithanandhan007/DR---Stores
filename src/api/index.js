@@ -139,3 +139,9 @@ export const adminApi = {
   analytics: () => api.get('/admin/analytics').then(unwrap),
   reports: () => api.get('/admin/reports').then(unwrap),
 }
+
+/* ---------- STORE SETTINGS (admin) ---------- */
+export const settingsApi = {
+  get: () => api.get('/settings').then(unwrap),
+  update: (payload) => api.put('/settings', payload).then(unwrap),
+}

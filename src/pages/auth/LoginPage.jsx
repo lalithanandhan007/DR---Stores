@@ -205,9 +205,6 @@ export default function LoginPage() {
               <LoadingButton loading={busy} loadingText="Signing in…" onClick={handleEmailLogin}>
                 Sign In <ArrowRight className="w-4 h-4" />
               </LoadingButton>
-              <div className="rounded-xl bg-primary/5 border border-primary/10 px-3 py-2.5 text-center">
-                <span className="text-[11px] text-dark/50">Demo: <b className="text-primary">demo@drstores.com</b> / <b className="text-primary">demo123</b></span>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>

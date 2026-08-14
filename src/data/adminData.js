@@ -15,9 +15,9 @@ export const storeStatus = {
 /* ---------- Admin profile ---------- */
 export const adminProfile = {
   _id: 'adm_001',
-  name: 'Ramesh Anandhan',
-  email: 'admin@drstores.com',
-  phone: '+91 98765 43210',
+  name: 'Lalith Anandhan',
+  email: 'lalithanandhan176@gmail.com',
+  phone: '+91 80562 49349',
   role: 'Administrator',
   avatar: null,
   store: 'D.R.STORES — Main Road',

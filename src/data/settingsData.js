@@ -7,16 +7,16 @@ export const defaultSettings = {
   /* Store identity */
   storeName: 'D.R.STORES',
   storeTagline: 'Farm Fresh • Trusted • Local',
-  ownerName: 'Ramesh Anandhan',
+  ownerName: 'Lalith Anandhan',
   gstNumber: '33ABCDE1234F1Z5',
-  phone: '+91 98765 43210',
-  email: 'admin@drstores.com',
+  phone: '+91 80562 49349',
+  email: 'lalithanandhan176@gmail.com',
   address: {
-    street: '42, Main Road',
-    locality: 'Anna Nagar',
+    street: 'Rice Mill Road',
+    locality: 'Kandigai',
     city: 'Chennai',
     state: 'Tamil Nadu',
-    pincode: '600040',
+    pincode: '600127',
     country: 'India',
   },
 

@@ -14,7 +14,7 @@ import connectDB from './config/db.js';
 import routes from './routes/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import ApiError from './utils/ApiError.js';
-
+import settingsRoutes from './routes/settingsRoutes.js'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -32,6 +32,7 @@ app.use(morgan('dev'));
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use('/api/settings', settingsRoutes)
 
 // Rate limiting
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 500, message: 'Too many requests, please try again later' });
