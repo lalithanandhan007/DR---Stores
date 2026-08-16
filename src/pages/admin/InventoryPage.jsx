@@ -147,9 +147,65 @@ export default function InventoryPage() {
             <h1 className="font-serif-display text-2xl font-bold text-dark tracking-tight">Inventory</h1>
             <p className="text-xs text-dark/45 mt-0.5">{counts.total} items · {inr(counts.totalValue)} total stock value · {counts.low} low stock</p>
           </div>
-          <button onClick={() => addToast('Inventory report exported (demo)', 'success', 2400)} className="ml-auto inline-flex items-center gap-2 h-10 px-4 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold shadow-md shadow-primary/15 hover:shadow-lg hover:-translate-y-0.5 transition-all">
-            <Download className="w-4 h-4" /> Export
-          </button>
+          <button
+  onClick={() => {
+    const headers = [
+      'Product',
+      'SKU',
+      'Current Stock',
+      'Minimum Stock',
+      'Reserved',
+      'Incoming',
+      'Stock Value',
+      'Status',
+      'Last Restock',
+    ]
+
+    const escapeCsv = (value) => {
+      const text = String(value ?? '')
+      return `"${text.replace(/"/g, '""')}"`
+    }
+
+    const rows = inventory.map((item) => [
+      item.name,
+      item.sku,
+      item.currentStock,
+      item.minStock,
+      item.reserved,
+      item.incoming,
+      item.value,
+      item.status,
+      item.lastRestocked
+        ? new Date(item.lastRestocked).toLocaleString('en-IN')
+        : '',
+    ])
+
+    const csv = [
+      headers.map(escapeCsv).join(','),
+      ...rows.map((row) => row.map(escapeCsv).join(',')),
+    ].join('\r\n')
+
+    const blob = new Blob(['\uFEFF' + csv], {
+      type: 'text/csv;charset=utf-8;',
+    })
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = `dr-stores-inventory-${new Date().toISOString().slice(0, 10)}.csv`
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    addToast(`${inventory.length} inventory items exported as CSV`, 'success', 2600)
+  }}
+  className="ml-auto inline-flex items-center gap-2 h-10 px-4 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold shadow-md shadow-primary/15 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+>
+  <Download className="w-4 h-4" /> Export
+</button>
         </div>
         <div className="mt-4"><KpiStrip counts={counts} statusFilter={filters.status} onSelect={(s) => { setFilters((f) => ({ ...f, status: s })); setPage(1) }} /></div>
       </motion.div>

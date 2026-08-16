@@ -1,5 +1,4 @@
 import { createContext, useContext, useReducer, useCallback, useState, useEffect, useMemo } from 'react'
-import products from '../data/products'
 import { cartApi, orderApi, addressApi, couponApi } from '../api'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from './AuthContext'
@@ -73,8 +72,9 @@ function cartReducer(state, action) {
 /* Map a backend Cart item to the frontend shape used by every page */
 function toFrontendItem(item) {
   const p = item.product && typeof item.product === 'object'
-    ? item.product
-    : products.find((pp) => pp.id === (item.product || item.productId))
+  ? item.product
+  : null
+
   const product = p
     ? {
         id: p._id || p.id,
@@ -344,9 +344,7 @@ export function CartProvider({ children }) {
 
   /* Sample orders shown on the Orders page when the account has none yet.
      Demo seeding is disabled — order history loads from the MongoDB API. */
-  const seedDemoOrders = useCallback(() => {
-    /* no-op */
-  }, [])
+  
 
   const cartValue = useMemo(() => ({
     items, cartItems, totalItems, subtotal, totalSaved, grandTotal,
@@ -358,7 +356,7 @@ export function CartProvider({ children }) {
     addItem, updateQty, removeItem, undoRemove, clearCart,
     removedItem, setRemovedItem,
     previewOpen, setPreviewOpen,
-    placeOrder, orderHistory, seedDemoOrders, ordersLoading, cartLoading,
+    placeOrder, orderHistory, ordersLoading, cartLoading,
   }), [
     items, cartItems, totalItems, subtotal, totalSaved, grandTotal,
     couponDiscount, deliveryFee, packagingFee, tax,
@@ -367,7 +365,7 @@ export function CartProvider({ children }) {
     saveAddress, deleteAddress, setDefaultAddress,
     addItem, updateQty, removeItem, undoRemove, clearCart,
     removedItem, previewOpen,
-    placeOrder, orderHistory, seedDemoOrders, ordersLoading, cartLoading,
+    placeOrder, orderHistory, ordersLoading, cartLoading,
   ])
 
   return (

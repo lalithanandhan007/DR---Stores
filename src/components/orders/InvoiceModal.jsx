@@ -1,3 +1,4 @@
+import { downloadOrderInvoice } from '../../utils/invoicePdf'
 import { motion } from 'framer-motion'
 import { X, Printer, Download } from 'lucide-react'
 import InvoicePreview from './InvoicePreview'
@@ -24,7 +25,14 @@ export default function InvoiceModal({ order, onClose }) {
           <span className="text-[11px] text-dark/40">· {order.customer.name}</span>
           <div className="ml-auto flex items-center gap-2">
             <button
-              onClick={() => { addToast('Invoice PDF downloaded (demo)', 'success', 2400) }}
+              onClick={() => {
+                try {
+                  downloadOrderInvoice(order)
+                  addToast('Invoice PDF downloaded', 'success', 2400)
+                } catch (error) {
+                  addToast('Could not generate invoice PDF', 'error', 3000)
+                }
+              }}
               className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-white border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all"
             >
               <Download className="w-3.5 h-3.5" /> Download

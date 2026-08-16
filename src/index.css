@@ -232,24 +232,51 @@ html.lenis body {
 }
 
 /* ---------- Print — isolate the invoice ---------- */
+/* ---------- Print — isolate the report ---------- */
 @media print {
+  html,
+  body {
+    background: white !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   body * {
     visibility: hidden !important;
   }
-  #invoice-print,
-  #invoice-print * {
+
+  #report-print,
+  #report-print * {
     visibility: visible !important;
   }
-  #invoice-print {
+
+  #report-print {
     position: absolute !important;
-    inset: 0;
-    width: 100%;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
   }
+
+  #report-print * {
+    overflow: visible !important;
+  }
+
   .fixed {
     position: absolute !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 10mm;
   }
 }
 

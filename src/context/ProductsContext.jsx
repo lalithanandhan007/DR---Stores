@@ -1,6 +1,5 @@
 import { createContext, useContext, useCallback, useState, useEffect, useMemo } from 'react'
 import { productApi } from '../api'
-import seedProducts from '../data/products'
 import { useAuth } from './AuthContext'
 
 /* ====================================================================
@@ -8,8 +7,6 @@ import { useAuth } from './AuthContext'
    The API returns the canonical product document (admin shape); this
    context maps it to BOTH the shop shape (price/originalPrice/category
    name/reviews) and the admin shape (sellingPrice/mrp/sku/status).
-   The seed list is only an optimistic skeleton so the UI never flashes
-   empty while the API responds.
    ==================================================================== */
 
 const ProductsCtx = createContext(null)
@@ -39,7 +36,7 @@ export const toAdminProduct = (p) => ({
 export function ProductsProvider({ children }) {
   const { role } = useAuth()
   const isAdmin = role === 'admin'
-  const [products, setProducts] = useState(() => seedProducts.map(toShopProduct))
+  const [products, setProducts] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -70,9 +67,12 @@ export function ProductsProvider({ children }) {
 
   const productById = useCallback((id) => {
     if (!id) return null
-    return allProducts.find((p) => p._id === id || p.id === id)
-      || products.find((p) => p.id === id || p._id === id)
-      || seedProducts.find((p) => p.id === id)
+  
+    return (
+      allProducts.find((p) => p._id === id || p.id === id) ||
+      products.find((p) => p.id === id || p._id === id) ||
+      null
+    )
   }, [allProducts, products])
 
   const saveProduct = useCallback(async (data) => {

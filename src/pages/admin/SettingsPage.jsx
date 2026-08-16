@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Save, Store, Truck, CreditCard, Bell, Palette, Shield, Clock, MapPin, Phone, Mail,
-  Globe, AlertTriangle, Check, Upload,
+  Globe, AlertTriangle, Check, Upload, Loader2,
 } from 'lucide-react'
-import { defaultSettings, DAY_LABELS } from '../../data/settingsData'
+import { DAY_LABELS } from '../../data/settingsData'
 import { settingsApi } from '../../api'
 import { useToast } from '../../context/CartContext'
 
@@ -39,10 +39,10 @@ function Toggle({ value, onChange }) {
 
 export default function SettingsPage() {
   const { addToast } = useToast()
-  const [settings, setSettings] = useState(defaultSettings)
+  const [settings, setSettings] = useState(null)
   const [settingsLoading, setSettingsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const set = (k, v) => setSettings((s) => ({ ...s, [k]: v }))
+  const set = (k, v) => setSettings((s) => s ? ({ ...s, [k]: v }) : s)
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -56,7 +56,7 @@ export default function SettingsPage() {
         setSettingsLoading(false)
       }
     }
-  
+
     loadSettings()
   }, [])
 
@@ -73,6 +73,31 @@ export default function SettingsPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  if (settingsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
+          <p className="text-dark/60">Loading store settings…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!settings) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+          <p className="text-dark/60">Failed to load store settings.</p>
+          <button onClick={() => window.location.reload()} className="mt-3 inline-flex items-center gap-2 h-10 px-5 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold">
+            Retry
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

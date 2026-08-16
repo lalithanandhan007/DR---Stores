@@ -14,6 +14,7 @@ import PaymentBadge from '../../components/orders/PaymentBadge'
 import ConfirmModal from '../../components/orders/ConfirmModal'
 import ExportModal from '../../components/orders/ExportModal'
 import InvoiceModal from '../../components/orders/InvoiceModal'
+import { downloadOrderInvoice } from '../../utils/invoicePdf'
 import { inr, formatTime, formatDate, timeAgo } from '../../utils/format'
 
 const PAGE_SIZE = 10
@@ -281,7 +282,14 @@ export default function OrdersPage() {
   const handleRowAction = (action, order) => {
     if (action === 'view') navigate(`/admin/orders/${order._id}`)
     else if (action === 'print') setInvoiceOrder(order)
-    else if (action === 'download') addToast(`Invoice for ${order._id} downloaded (demo)`, 'success', 2400)
+      else if (action === 'download') {
+        try {
+          downloadOrderInvoice(order)
+          addToast('Invoice PDF downloaded', 'success', 2400)
+        } catch (err) {
+          addToast('Could not generate PDF invoice', 'error', 3000)
+        }
+      }
     else if (action === 'assign') navigate(`/admin/orders/${order._id}`)
     else if (action === 'cancel') setCancelTarget(order)
   }
@@ -558,7 +566,14 @@ export default function OrdersPage() {
           />
         )}
       </AnimatePresence>
-      <ExportModal count={selected.size || filtered.length} open={exportOpen} onClose={() => setExportOpen(false)} />
+      <ExportModal
+        orders={selected.size
+        ? filtered.filter((o) => selected.has(o._id))
+        : filtered}
+        count={selected.size || filtered.length}
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+      />
       <AnimatePresence>{invoiceOrder && <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />}</AnimatePresence>
     </div>
   )

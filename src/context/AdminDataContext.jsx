@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
-import { adminApi, notificationApi, orderApi } from '../api'
+import { adminApi, notificationApi, orderApi, settingsApi } from '../api'
 import { useAuth } from './AuthContext'
 
 /* ====================================================================
@@ -10,33 +10,15 @@ import { useAuth } from './AuthContext'
 
 const AdminDataCtx = createContext(null)
 
-const SPARKS = {
-  revenue: [42, 48, 45, 61, 58, 72, 78],
-  orders: [30, 42, 38, 47, 44, 56, 61],
-  pending: [52, 44, 48, 38, 42, 34, 30],
-  delivered: [28, 36, 40, 34, 46, 52, 48],
-  customers: [20, 24, 30, 28, 34, 38, 44],
-  lowStock: [34, 38, 30, 28, 32, 26, 24],
-  aov: [36, 40, 44, 42, 48, 46, 52],
-  conversion: [38, 42, 40, 46, 44, 50, 48],
-}
-
-function sparkIcon(id) {
-  return {
-    revenue: 'wallet', orders: 'basket', pending: 'clock', delivered: 'truck',
-    customers: 'users', lowStock: 'box', aov: 'coins', conversion: 'percent',
-  }[id] || 'chart'
-}
-
-const DEFAULT_STATCARDS = [
-  { id: 'revenue', label: "Today's Revenue", value: 0, prefix: '₹', delta: 12.4, trend: 'up', icon: 'wallet', spark: SPARKS.revenue },
-  { id: 'orders', label: "Today's Orders", value: 0, delta: 8.1, trend: 'up', icon: 'basket', spark: SPARKS.orders },
-  { id: 'pending', label: 'Pending Orders', value: 0, delta: -3.2, trend: 'down', icon: 'clock', spark: SPARKS.pending },
-  { id: 'delivered', label: 'Delivered Today', value: 0, delta: 5.2, trend: 'up', icon: 'truck', spark: SPARKS.delivered },
-  { id: 'customers', label: 'Total Customers', value: 0, delta: 2.4, trend: 'up', icon: 'users', spark: SPARKS.customers },
-  { id: 'lowStock', label: 'Low Stock Items', value: 0, delta: -1.0, trend: 'down', icon: 'box', spark: SPARKS.lowStock },
-  { id: 'aov', label: 'Avg Order Value', value: 0, prefix: '₹', delta: 3.6, trend: 'up', icon: 'coins', spark: SPARKS.aov },
-  { id: 'conversion', label: 'Conversion Rate', value: 8.6, suffix: '%', delta: 1.2, trend: 'up', icon: 'percent', spark: SPARKS.conversion },
+const BASE_STATCARDS = [
+  { id: 'revenue', label: "Today's Revenue", value: 0, prefix: '₹', delta: 0, trend: 'neutral', icon: 'wallet' },
+  { id: 'orders', label: "Today's Orders", value: 0, delta: 0, trend: 'neutral', icon: 'basket' },
+  { id: 'pending', label: 'Pending Orders', value: 0, delta: 0, trend: 'neutral', icon: 'clock' },
+  { id: 'delivered', label: 'Delivered Today', value: 0, delta: 0, trend: 'neutral', icon: 'truck' },
+  { id: 'customers', label: 'Total Customers', value: 0, delta: 0, trend: 'neutral', icon: 'users' },
+  { id: 'lowStock', label: 'Low Stock Items', value: 0, delta: 0, trend: 'neutral', icon: 'box' },
+  { id: 'aov', label: 'Average Order Value', value: 0, prefix: '₹', delta: 0, trend: 'neutral', icon: 'coins' },
+  { id: 'conversion', label: 'Conversion Rate', value: '—', suffix: '', delta: 0, trend: 'neutral', icon: 'target' },
 ]
 
 export function AdminDataProvider({ children }) {
@@ -52,6 +34,7 @@ export function AdminDataProvider({ children }) {
   const [notifications, setNotifications] = useState([])
   const [analytics, setAnalytics] = useState(null)
   const [recentOrders, setRecentOrders] = useState([])
+  const [storeSettings, setStoreSettings] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -74,13 +57,14 @@ export function AdminDataProvider({ children }) {
     adminApi.activity().then((logs) => setActivity(logs || [])).catch(() => setError('Could not load activity'))
     adminApi.analytics().then(setAnalytics).catch(() => setError('Could not load analytics'))
     notificationApi.list().then((list) => setNotifications(list || [])).catch(() => setError('Could not load notifications'))
+    settingsApi.get().then(setStoreSettings).catch(() => { /* store settings surface via Settings page */ })
       .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => { load() }, [load])
 
   const statCards = useMemo(() => {
-    if (!stats) return DEFAULT_STATCARDS
+    if (!stats) return BASE_STATCARDS
     const map = {
       revenue: stats.todayRevenue,
       orders: stats.todayOrders,
@@ -89,9 +73,8 @@ export function AdminDataProvider({ children }) {
       customers: stats.totalCustomers,
       lowStock: stats.lowStockItems,
       aov: stats.avgOrderValue,
-      conversion: 8.6,
     }
-    return DEFAULT_STATCARDS.map((c) => ({ ...c, value: map[c.id] ?? c.value }))
+    return BASE_STATCARDS.map((c) => ({ ...c, value: map[c.id] ?? c.value }))
   }, [stats])
 
   const adminProfile = useMemo(() => {
@@ -103,9 +86,33 @@ export function AdminDataProvider({ children }) {
       phone: user.phone,
       role: 'Administrator',
       avatar: user.avatar || null,
-      store: 'D.R.STORES — Main Road',
+      store: storeSettings?.storeName || 'D.R.STORES',
     }
-  }, [user])
+  }, [user, storeSettings])
+
+  const storeStatus = useMemo(() => {
+    if (!storeSettings?.businessHours) {
+      return { open: false, statusLabel: 'Closed', hours: '—', day: new Date().toLocaleDateString('en-IN', { weekday: 'long' }).toUpperCase() }
+    }
+    const now = new Date()
+    const dayKey = now.toLocaleDateString('en-IN', { weekday: 'long' }).toLowerCase()
+    const today = storeSettings.businessHours[dayKey]
+    if (!today?.active) {
+      return { open: false, statusLabel: 'Closed', hours: '—', day: dayKey.toUpperCase() }
+    }
+    const [openH, openM] = (today.open || '00:00').split(':').map(Number)
+    const [closeH, closeM] = (today.close || '00:00').split(':').map(Number)
+    const openMinutes = openH * 60 + openM
+    const closeMinutes = closeH * 60 + closeM
+    const nowMinutes = now.getHours() * 60 + now.getMinutes()
+    const open = nowMinutes >= openMinutes && nowMinutes < closeMinutes
+    return {
+      open,
+      statusLabel: open ? 'Open Now' : 'Closed',
+      hours: `${today.open} – ${today.close}`,
+      day: dayKey.toUpperCase(),
+    }
+  }, [storeSettings])
 
   const value = useMemo(() => ({
     loading,
@@ -113,12 +120,13 @@ export function AdminDataProvider({ children }) {
     statCards,
     stats,
     adminProfile,
-    storeStatus: { open: true, statusLabel: 'Open Now', hours: '8:00 AM – 10:00 PM', day: 'TODAY' },
+    storeStatus,
+    storeSettings,
     weeklyRevenue, monthlyRevenue, ordersTrend, categoryDistribution,
     topProducts, lowStock, activity, notifications, analytics, recentOrders,
     refresh: load,
   }), [
-    loading, error, statCards, stats, adminProfile, weeklyRevenue, monthlyRevenue,
+    loading, error, statCards, stats, adminProfile, storeStatus, storeSettings, weeklyRevenue, monthlyRevenue,
     ordersTrend, categoryDistribution, topProducts, lowStock, activity,
     notifications, analytics, recentOrders, load,
   ])
@@ -131,5 +139,3 @@ export function useAdminData() {
   if (!ctx) throw new Error('useAdminData must be used within AdminDataProvider')
   return ctx
 }
-
-export { orderApi as adminOrderApi }

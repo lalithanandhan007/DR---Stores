@@ -134,9 +134,22 @@ function Step4({ form, set }) {
     set('images', [...(form.images || []), ...newImages])
   }
   const addDemo = () => {
-    const emojis = ['🍅', '🥔', '🥕', '🥦', '🥬', '🌽', '🍋', '🍄']
-    const emoji = emojis[Math.floor(Math.random() * emojis.length)]
-    set('images', [...(form.images || []), { name: `image_${Date.now()}.jpg`, emoji }])
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/png,image/jpeg,image/webp'
+    input.multiple = true
+  
+    input.onchange = (e) => {
+      const files = [...e.target.files]
+      const newImages = files.map((file) => ({
+        name: file.name,
+        url: URL.createObjectURL(file),
+      }))
+  
+      set('images', [...(form.images || []), ...newImages])
+    }
+  
+    input.click()
   }
   return (
     <div className="space-y-4">

@@ -1,3 +1,4 @@
+import { productApi } from '../../api'
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -432,7 +433,21 @@ export default function ProductsPage() {
 
       <FilterPanel filters={filters} setFilters={setFilters} open={filterOpen} onClose={() => setFilterOpen(false)} />
       <AnimatePresence>
-        {deleteProduct && <DeleteModal product={deleteProduct} onClose={() => setDeleteProduct(null)} onConfirm={() => { setProducts((prev) => prev.filter((p) => p._id !== deleteProduct._id)); setDeleteProduct(null) }} />}
+      {deleteProduct && (
+  <DeleteModal
+    product={deleteProduct}
+    onClose={() => setDeleteProduct(null)}
+    onConfirm={async () => {
+      try {
+        await productApi.remove(deleteProduct._id)
+        setProducts((prev) => prev.filter((p) => p._id !== deleteProduct._id))
+        setDeleteProduct(null)
+      } catch (err) {
+        console.error(err)
+      }
+    }}
+  />
+)}
         {viewProduct && <ViewModal product={viewProduct} onClose={() => setViewProduct(null)} onEdit={(id) => navigate(`/admin/products/edit/${id}`)} />}
         {importExport && <ImportExportModal type={importExport} onClose={() => setImportExport(null)} />}
       </AnimatePresence>

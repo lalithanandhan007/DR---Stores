@@ -1,7 +1,7 @@
 /* ====================================================================
-   D.R.STORES — Reports module mock data
-   Report templates, categories, and mock generated reports.
-   MongoDB-ready: each report is a document with filters & generatedAt.
+   D.R.STORES — Reports module configuration
+   Report categories and templates (UI definitions).
+   Real report data is generated from live backend data in ReportsPage.
    ==================================================================== */
 
 const d = (n) => new Date(Date.now() - n * 864e5).toISOString()
@@ -17,7 +17,7 @@ export const REPORT_CATEGORIES = [
 
 export const reportTemplates = [
   /* Sales */
-  { _id: 'rpt_001', name: 'Daily Sales Report', category: 'sales', period: 'daily', description: 'Complete breakdown of today\'s sales by product, category, and payment method.', lastGenerated: d(0), status: 'ready' },
+  { _id: 'rpt_001', name: 'Daily Sales Report', category: 'sales', period: 'daily', description: "Complete breakdown of today's sales by product, category, and payment method.", lastGenerated: d(0), status: 'ready' },
   { _id: 'rpt_002', name: 'Weekly Sales Summary', category: 'sales', period: 'weekly', description: 'Week-over-week sales comparison with trend analysis.', lastGenerated: d(1), status: 'ready' },
   { _id: 'rpt_003', name: 'Monthly Sales Analysis', category: 'sales', period: 'monthly', description: 'Detailed monthly sales with category breakdown and top performers.', lastGenerated: d(3), status: 'ready' },
   { _id: 'rpt_004', name: 'Yearly Sales Report', category: 'sales', period: 'yearly', description: 'Annual sales overview with YoY growth metrics.', lastGenerated: d(7), status: 'ready' },
@@ -37,19 +37,3 @@ export const reportTemplates = [
   { _id: 'rpt_013', name: 'Delivery Performance', category: 'delivery', period: 'weekly', description: 'On-time rates, average delivery time, and partner scores.', lastGenerated: d(1), status: 'ready' },
   { _id: 'rpt_014', name: 'Delivery Zone Analysis', category: 'delivery', period: 'monthly', description: 'Revenue and order density by delivery pincode zones.', lastGenerated: d(10), status: 'ready' },
 ]
-
-/* Mock generated report data (shown in report preview) */
-export const mockReportData = {
-  'rpt_001': {
-    title: 'Daily Sales Report — 1 August 2026',
-    summary: { totalSales: 86420, totalOrders: 214, avgOrder: 404, topProduct: 'Fresh Tomato', cancelledOrders: 8 },
-    topProducts: [
-      { name: 'Fresh Tomato', qty: 68, revenue: 1904 },
-      { name: 'Premium Potato', qty: 54, revenue: 1188 },
-      { name: 'Baby Spinach', qty: 42, revenue: 1008 },
-      { name: 'Red Onion', qty: 38, revenue: 684 },
-      { name: 'Sweet Carrot', qty: 31, revenue: 1240 },
-    ],
-    paymentBreakdown: { UPI: 42, Card: 28, 'Cash on Delivery': 18, NetBanking: 12 },
-  },
-}

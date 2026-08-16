@@ -186,9 +186,9 @@ export default function AdminDashboardPage() {
 
       {/* Footer note */}
       <Reveal>
-        <p className="text-center text-[11px] text-dark/30 flex items-center justify-center gap-1.5 py-4">
-          <Sparkles className="w-3.5 h-3.5" /> D.R.STORES Admin · Data is mock and ready to connect to MongoDB
-        </p>
+      <p className="text-center text-[11px] text-dark/30 flex items-center justify-center gap-1.5 py-4">
+        <Sparkles className="w-3.5 h-3.5" /> D.R.STORES Admin · Live data from MongoDB
+      </p>
       </Reveal>
     </div>
   )

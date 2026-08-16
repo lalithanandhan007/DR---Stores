@@ -6,6 +6,7 @@ import {
   ShoppingBag, Truck, CookingPot, CircleCheckBig, Ban,
 } from 'lucide-react'
 import { useCart, useToast } from '../../context/CartContext'
+import { downloadOrderInvoice } from '../../utils/invoicePdf'
 import PaymentStatusBadge from '../ui/PaymentStatusBadge'
 
 const TIMELINE = [
@@ -194,13 +195,18 @@ export default function OrderCard({ order, index }) {
 
       {/* Items preview */}
       <div className="flex items-center gap-2 flex-wrap mt-3">
-        {order.items?.slice(0, 6).map(({ product, weight, qty }) => (
-          <span key={`${product.id}-${weight}`} className="inline-flex items-center gap-1.5 bg-cream rounded-full pl-2 pr-3 py-1 border border-black/5">
-            <span className="text-base">{product.emoji}</span>
-            <span className="text-[11px] text-dark/60 font-medium">{product.name.split(' ').slice(0, 2).join(' ')}</span>
-            <span className="text-[10px] text-dark/30">×{qty}</span>
-          </span>
-        ))}
+      {order.items?.slice(0, 6).map((item, index) => (
+  <span
+    key={`${item.productId || index}-${item.weight || ''}`}
+    className="inline-flex items-center gap-1.5 bg-cream rounded-full pl-2 pr-3 py-1 border border-black/5"
+  >
+    <span className="text-base">{item.emoji || '🥬'}</span>
+    <span className="text-[11px] text-dark/60 font-medium">
+      {(item.name || 'Product').split(' ').slice(0, 2).join(' ')}
+    </span>
+    <span className="text-[10px] text-dark/30">×{item.qty || 0}</span>
+  </span>
+))}
         {(order.items?.length || 0) > 6 && <span className="text-[11px] text-dark/35">+{(order.items?.length || 0) - 6} more</span>}
       </div>
 
@@ -212,13 +218,21 @@ export default function OrderCard({ order, index }) {
         </div>
         <div className="flex items-center gap-2">
           {order.status !== 'cancelled' && (
-            <button onClick={repeatOrder} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary/8 text-primary text-xs font-bold hover:bg-primary hover:text-white transition-all duration-300">
-              <Repeat className="w-3.5 h-3.5" /> Repeat Order
-            </button>
-          )}
-          <button onClick={() => setShowInvoice(true)} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all duration-300">
+            <button
+            onClick={() => {
+              try {
+                downloadOrderInvoice(order)
+                addToast('Invoice downloaded successfully', 'success')
+              } catch (err) {
+                addToast('Could not generate invoice', 'error')
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all duration-300"
+          >
             <FileText className="w-3.5 h-3.5" /> Invoice
           </button>
+          )}
+          
           <button onClick={() => setOpen((o) => !o)} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all duration-300">
             Details <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
           </button>
@@ -239,13 +253,22 @@ export default function OrderCard({ order, index }) {
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-dark/35 mb-2">Items</p>
                 <div className="space-y-2">
-                  {order.items?.map(({ product, weight, qty }) => (
-                    <div key={`${product.id}-${weight}`} className="flex items-center gap-2.5">
-                      <span className="text-base">{product.emoji}</span>
-                      <span className="flex-1 text-dark/70 truncate text-xs">{product.name} · {weight}</span>
-                      <span className="text-xs font-semibold text-dark">₹{product.price * qty}</span>
-                    </div>
-                  ))}
+                {order.items?.map((item, index) => (
+  <div
+    key={`${item.productId || index}-${item.weight || ''}`}
+    className="flex items-center gap-2.5"
+  >
+    <span className="text-base">{item.emoji || '🥬'}</span>
+
+    <span className="flex-1 text-dark/70 truncate text-xs">
+      {item.name || 'Product'} · {item.weight || ''}
+    </span>
+
+    <span className="text-xs font-semibold text-dark">
+      ₹{(Number(item.price) || 0) * Number(item.qty || 0)}
+    </span>
+  </div>
+))}
                 </div>
               </div>
               <div className="space-y-2.5">

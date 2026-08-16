@@ -1,14 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import { TrendingUp, TrendingDown, Users, ShoppingBag, Wallet, Target, BarChart3, ArrowUpRight, ArrowDownRight } from 'lucide-react'
-import {
-  monthlyRevenue, salesByHour, salesByDay,
-  customerGrowth, customerRetention, avgOrderValue, conversionRate,
-} from '../../data/analyticsData'
 import { useAdminData } from '../../context/AdminDataContext'
 import { inr } from '../../utils/format'
 
@@ -17,6 +13,7 @@ const COLORS = ['#2E7D32', '#4CAF50', '#66BB6A', '#81C784', '#A5D6A7', '#C8E6C9'
 function AnimatedNumber({ value, prefix = '', suffix = '', delay = 0 }) {
   const [display, setDisplay] = useState(0)
   useEffect(() => {
+    if (typeof value !== 'number') return
     const timeout = setTimeout(() => {
       let start = 0
       const duration = 1200
@@ -32,7 +29,7 @@ function AnimatedNumber({ value, prefix = '', suffix = '', delay = 0 }) {
     }, delay)
     return () => clearTimeout(timeout)
   }, [value, delay])
-  return <span>{prefix}{display.toLocaleString('en-IN')}{suffix}</span>
+  return <span>{prefix}{typeof value === 'number' ? display.toLocaleString('en-IN') : value}{suffix}</span>
 }
 
 function ChartCard({ title, subtitle, children, delay = 0 }) {
@@ -61,17 +58,32 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
+function EmptyChart({ title = 'No data available', subtitle = 'Data will appear here when available' }) {
+  return (
+    <div className="h-72 flex flex-col items-center justify-center text-center text-dark/40 p-4">
+      <BarChart3 className="w-10 h-10 mb-3 text-dark/20" />
+      <p className="text-sm font-medium text-dark/50">{title}</p>
+      <p className="text-[11px] text-dark/30 mt-1">{subtitle}</p>
+    </div>
+  )
+}
+
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState('monthly')
-  const { analytics, loading } = useAdminData()
+  const { analytics, loading, monthlyRevenue, weeklyRevenue, ordersTrend } = useAdminData()
+
   const kpiSummary = analytics?.kpiSummary || []
   const topProducts = analytics?.topProducts || []
   const topCategories = analytics?.topCategories || []
+  const deliveryAnalytics = analytics?.deliveryAnalytics || null
+
+  const monthlyRevenueData = monthlyRevenue || []
+  const weeklyRevenueData = weeklyRevenue || []
+  const orderTrendData = ordersTrend || []
 
   if (loading) {
     return (
       <div className="space-y-5">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
           <div className="flex flex-wrap items-center gap-3">
             <div>
@@ -81,7 +93,6 @@ export default function AnalyticsPage() {
           </div>
         </motion.div>
 
-        {/* Skeleton chart placeholders */}
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
           {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-24 rounded-2xl bg-black/4 animate-pulse" />)}
         </div>
@@ -92,6 +103,15 @@ export default function AnalyticsPage() {
         <div className="grid lg:grid-cols-2 gap-5">
           <div className="h-64 rounded-3xl bg-black/4 animate-pulse" />
           <div className="h-64 rounded-3xl bg-black/4 animate-pulse" />
+        </div>
+        <div className="grid lg:grid-cols-2 gap-5">
+          <div className="h-64 rounded-3xl bg-black/4 animate-pulse" />
+          <div className="h-64 rounded-3xl bg-black/4 animate-pulse" />
+        </div>
+        <div className="grid sm:grid-cols-3 gap-5">
+          <div className="h-36 rounded-2xl bg-black/4 animate-pulse" />
+          <div className="h-36 rounded-2xl bg-black/4 animate-pulse" />
+          <div className="h-36 rounded-2xl bg-black/4 animate-pulse" />
         </div>
       </div>
     )
@@ -109,24 +129,45 @@ export default function AnalyticsPage() {
     )
   }
 
+  const revenueChartData = useMemo(() => {
+    if (!monthlyRevenueData.length) return []
+    return monthlyRevenueData.map(m => ({
+      month: m.month,
+      revenue: m.revenue || 0,
+      orders: m.orders || 0,
+      prevRevenue: m.prev || 0,
+    }))
+  }, [monthlyRevenueData])
+
+  const weeklyRevenueChartData = useMemo(() => {
+    if (!weeklyRevenueData.length) return []
+    return weeklyRevenueData.map(w => ({
+      day: w.day,
+      revenue: w.revenue || 0,
+      orders: w.orders || 0,
+    }))
+  }, [weeklyRevenueData])
+
+  const orderTrendChartData = useMemo(() => {
+    if (!orderTrendData.length) return []
+    return orderTrendData.map(o => ({
+      date: o.date,
+      orders: o.orders || 0,
+      delivered: o.delivered || 0,
+    }))
+  }, [orderTrendData])
+
   return (
     <div className="space-y-5">
-      {/* Header */}
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
         <div className="flex flex-wrap items-center gap-3">
           <div>
             <h1 className="font-serif-display text-2xl font-bold text-dark tracking-tight">Analytics</h1>
             <p className="text-xs text-dark/45 mt-0.5">Comprehensive business intelligence dashboard</p>
           </div>
-          <div className="ml-auto flex items-center gap-1 bg-white rounded-2xl border border-black/5 p-1">
-            {['daily', 'weekly', 'monthly'].map((p) => (
-              <button key={p} onClick={() => setPeriod(p)} className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${period === p ? 'bg-primary text-white shadow-md shadow-primary/20' : 'text-dark/50 hover:text-primary'}`}>{p}</button>
-            ))}
-          </div>
         </div>
       </motion.div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
         {kpiSummary.map((kpi, i) => (
           <motion.div key={kpi.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
@@ -140,99 +181,123 @@ export default function AnalyticsPage() {
               {kpi.growth >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
               {Math.abs(kpi.growth)}%
             </span>
+            <p className="text-[10px] text-dark/40 mt-0.5">{kpi.period}</p>
           </motion.div>
         ))}
       </div>
 
-      {/* Revenue Charts Row */}
       <div className="grid lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2">
-          <ChartCard title="Revenue Trend" subtitle="Monthly revenue vs previous year" delay={0.05}>
+          <ChartCard title="Monthly Revenue Trend" subtitle="Revenue vs previous year" delay={0.05}>
+            {revenueChartData.length ? (
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={revenueChartData}>
+                    <defs>
+                      <linearGradient id="gRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#2E7D32" stopOpacity={0.2} />
+                        <stop offset="100%" stopColor="#2E7D32" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gPrev" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#E8F0E8" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="#E8F0E8" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#999' }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#999' }} tickFormatter={(v) => `${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#2E7D32" fill="url(#gRevenue)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="prevRevenue" name="Previous Year" stroke="#E8F0E8" fill="url(#gPrev)" strokeWidth={2} strokeDasharray="5 5" />
+                    <Legend />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyChart />
+            )}
+          </ChartCard>
+        </div>
+        <ChartCard title="Weekly Revenue" subtitle="Last 7 days" delay={0.1}>
+          {weeklyRevenueChartData.length ? (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyRevenue}>
+                <BarChart data={weeklyRevenueChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#999' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#999' }} tickFormatter={(v) => `${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="revenue" name="Revenue" radius={[6, 6, 0, 0]} fill="#4CAF50" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyChart />
+          )}
+        </ChartCard>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-5">
+        <ChartCard title="Order Trend (7 Days)" subtitle="Orders placed vs delivered" delay={0.15}>
+          {orderTrendChartData.length ? (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={orderTrendChartData}>
                   <defs>
-                    <linearGradient id="gRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="gOrders" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#2E7D32" stopOpacity={0.2} />
                       <stop offset="100%" stopColor="#2E7D32" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="gPrev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#E8F0E8" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="#E8F0E8" stopOpacity={0} />
+                    <linearGradient id="gDelivered" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FF9800" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="#FF9800" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#999' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#999' }} tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#999' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#999' }} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="prev" name="Previous Year" stroke="#ccc" fill="url(#gPrev)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#2E7D32" fill="url(#gRevenue)" strokeWidth={2.5} />
+                  <Area type="monotone" dataKey="orders" name="Orders" stroke="#2E7D32" fill="url(#gOrders)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="delivered" name="Delivered" stroke="#FF9800" fill="url(#gDelivered)" strokeWidth={2} />
+                  <Legend />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </ChartCard>
-        </div>
-        <ChartCard title="Sales by Day" subtitle="Weekly pattern" delay={0.1}>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesByDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#999' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#999' }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="sales" name="Sales" radius={[6, 6, 0, 0]}>
-                  {salesByDay.map((_, i) => <Cell key={i} fill={i === 5 || i === 6 ? '#2E7D32' : '#4CAF50'} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          ) : (
+            <EmptyChart />
+          )}
+        </ChartCard>
+        <ChartCard title="Top Categories" subtitle="Product categories by count" delay={0.2}>
+          {topCategories.length ? (
+            <div className="flex items-center gap-6">
+              <div className="w-48 h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={topCategories} dataKey="orders" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={80} strokeWidth={2} stroke="#fff">
+                      {topCategories.map((c, i) => <Cell key={i} fill={c.color} />)}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex-1 space-y-2">
+                {topCategories.map((c) => (
+                  <div key={c.name} className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.color }} />
+                    <span className="text-xs text-dark/60 flex-1 truncate">{c.name}</span>
+                    <span className="text-xs font-bold text-dark">{c.share}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <EmptyChart />
+          )}
         </ChartCard>
       </div>
 
-      {/* Sales by Hour + Customer Growth */}
       <div className="grid lg:grid-cols-2 gap-5">
-        <ChartCard title="Sales by Hour" subtitle="Today's hourly revenue distribution" delay={0.15}>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesByHour}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#999' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#999' }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="sales" name="Sales" radius={[4, 4, 0, 0]} fill="#FF9800" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
-        <ChartCard title="Customer Growth" subtitle="New vs returning customers" delay={0.2}>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={customerGrowth}>
-                <defs>
-                  <linearGradient id="gNew" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2E7D32" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#2E7D32" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="gReturn" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FF9800" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#FF9800" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#999' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#999' }} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="returning" name="Returning" stroke="#FF9800" fill="url(#gReturn)" strokeWidth={2} />
-                <Area type="monotone" dataKey="new" name="New" stroke="#2E7D32" fill="url(#gNew)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
-      </div>
-
-      {/* Top Products + Category Split */}
-      <div className="grid lg:grid-cols-2 gap-5">
-        <ChartCard title="Top Selling Products" subtitle="By units sold this month" delay={0.25}>
+        <ChartCard title="Top Selling Products" subtitle="By units sold" delay={0.25}>
           <div className="space-y-3">
             {topProducts.slice(0, 6).map((p, i) => {
               const maxSold = topProducts[0]?.sold || 1
@@ -258,37 +323,41 @@ export default function AnalyticsPage() {
             })}
           </div>
         </ChartCard>
-        <ChartCard title="Revenue by Category" subtitle="Category contribution to total revenue" delay={0.3}>
-          <div className="flex items-center gap-6">
-            <div className="w-48 h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={topCategories} dataKey="revenue" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={80} strokeWidth={2} stroke="#fff">
-                    {topCategories.map((c, i) => <Cell key={i} fill={c.color} />)}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex-1 space-y-2">
-              {topCategories.map((c) => (
-                <div key={c.name} className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.color }} />
-                  <span className="text-xs text-dark/60 flex-1 truncate">{c.name}</span>
-                  <span className="text-xs font-bold text-dark">{c.share}%</span>
+        <ChartCard title="Delivery Performance" subtitle="Average delivery time & on-time rate" delay={0.3}>
+          {deliveryAnalytics ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-dark/45">Average Delivery Time</p>
+                  <p className="text-3xl font-black text-primary">{deliveryAnalytics.avgTime} min</p>
                 </div>
-              ))}
+                <div className="text-right">
+                  <p className="text-xs text-dark/45">On-Time Rate</p>
+                  <p className="text-3xl font-black text-emerald-600">{deliveryAnalytics.onTimeRate}%</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                  <p className="text-xs text-emerald-700 font-bold">Total Deliveries</p>
+                  <p className="text-xl font-black text-emerald-800">{deliveryAnalytics.totalDeliveries.toLocaleString('en-IN')}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-red-50 border border-red-100">
+                  <p className="text-xs text-red-700 font-bold">Failed Deliveries</p>
+                  <p className="text-xl font-black text-red-800">{deliveryAnalytics.failedDeliveries || 0}</p>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <EmptyChart />
+          )}
         </ChartCard>
       </div>
 
-      {/* Retention + AOV + Conversion */}
       <div className="grid sm:grid-cols-3 gap-5">
         {[
-          { label: 'Repeat Customer Rate', value: customerRetention.rate, suffix: '%', sub: `${customerRetention.repeat}% repeat · ${customerRetention.oneTime}% one-time`, color: 'text-primary' },
-          { label: 'Average Order Value', value: avgOrderValue.current, prefix: '₹', sub: `${avgOrderValue.growth}% growth vs ₹${avgOrderValue.previous}`, color: 'text-emerald-600' },
-          { label: 'Conversion Rate', value: conversionRate.current, suffix: '%', sub: `${conversionRate.growth}% improvement vs ${conversionRate.previous}%`, color: 'text-accent' },
+          { label: 'Repeat Customer Rate', value: '--', sub: 'Requires customer tracking data', color: 'text-primary' },
+          { label: 'Average Order Value', value: analytics?.kpiSummary?.find(k => k.label === 'Avg Order Value')?.value || '--', prefix: '₹', sub: 'From live order data', color: 'text-emerald-600' },
+          { label: 'Conversion Rate', value: '--', sub: 'Requires session/visitor tracking', color: 'text-accent' },
         ].map((stat, i) => (
           <ChartCard key={stat.label} delay={0.35 + i * 0.05}>
             <p className="text-[11px] text-dark/45">{stat.label}</p>
@@ -301,7 +370,7 @@ export default function AnalyticsPage() {
       </div>
 
       <p className="text-center text-[11px] text-dark/30 flex items-center justify-center gap-1.5 py-4">
-        <BarChart3 className="w-3.5 h-3.5" /> D.R.STORES Analytics · All data is mock and ready to connect to MongoDB aggregation pipelines
+        <BarChart3 className="w-3.5 h-3.5" /> D.R.STORES Analytics · Powered by MongoDB aggregation pipelines
       </p>
     </div>
   )

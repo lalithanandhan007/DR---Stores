@@ -79,9 +79,61 @@ export default function ActivityLogsPage() {
             <h1 className="font-serif-display text-2xl font-bold text-dark tracking-tight">Activity Logs</h1>
             <p className="text-xs text-dark/45 mt-0.5">{counts.total} log entries · Audit trail of all admin actions</p>
           </div>
-          <button onClick={() => addToast('Activity logs exported (demo)', 'success', 2400)} className="ml-auto inline-flex items-center gap-2 h-10 px-4 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold shadow-md shadow-primary/15 hover:shadow-lg hover:-translate-y-0.5 transition-all">
-            <Download className="w-4 h-4" /> Export
-          </button>
+          <button
+  onClick={() => {
+    if (!activityLogs?.length) {
+      addToast('No activity logs to export', 'info', 2200)
+      return
+    }
+
+    const headers = [
+      'Date',
+      'User',
+      'Action',
+      'Type',
+      'Severity',
+      'Description',
+    ]
+
+    const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
+
+    const rows = activityLogs.map((log) => [
+      log.createdAt || log.timestamp
+        ? new Date(log.createdAt || log.timestamp).toLocaleString('en-IN')
+        : '',
+      log.user?.name || log.userName || log.actor || '',
+      log.action || '',
+      log.type || '',
+      log.severity || '',
+      log.description || log.message || '',
+    ])
+
+    const csv = [
+      headers,
+      ...rows,
+    ].map((row) => row.map(escapeCsv).join(',')).join('\r\n')
+
+    const blob = new Blob(['\uFEFF' + csv], {
+      type: 'text/csv;charset=utf-8;',
+    })
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = `D.R.STORES-Activity-Logs-${new Date().toISOString().slice(0, 10)}.csv`
+
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+
+    addToast(`${activityLogs.length} activity logs exported as CSV`, 'success', 2600)
+  }}
+  className="ml-auto inline-flex items-center gap-2 h-10 px-4 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold shadow-md shadow-primary/15 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+>
+  <Download className="w-4 h-4" /> Export
+</button>
         </div>
         <div className="mt-4"><KpiStrip counts={counts} typeFilter={typeFilter} onSelect={(t) => { setTypeFilter(t); setPage(1) }} /></div>
       </motion.div>

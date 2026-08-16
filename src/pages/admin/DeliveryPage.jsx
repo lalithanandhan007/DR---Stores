@@ -140,7 +140,13 @@ export default function DeliveryPage() {
 
   const handleAction = (action, partner) => {
     if (action === 'toggle') toggleOnline(partner._id)
-    else if (action === 'call') addToast(`Calling ${partner.name} (demo)`, 'info', 2000)
+      else if (action === 'call') {
+        if (partner.phone) {
+          window.location.href = `tel:${partner.phone.replace(/\D/g, '')}`
+        } else {
+          addToast('This delivery partner has no phone number', 'info', 2200)
+        }
+      }
   }
 
   const hasActiveFilters = Object.values(filters).some((v) => v !== '')

@@ -7,6 +7,7 @@ import {
   ArrowLeft, Check, Share2,
 } from 'lucide-react'
 import { useProducts } from '../context/ProductsContext'
+import { reviewApi } from '../api'
 import ProductCard from '../components/shop/ProductCard'
 import Skeleton from '../components/ui/Skeleton'
 import ProductVisual from '../components/shop/ProductVisual'
@@ -61,22 +62,29 @@ function ReviewCard({ review, index }) {
   )
 }
 
-const sampleReviews = [
-  { name: 'Priya S.', rating: 5, text: 'Absolutely fresh! The tomatoes were firm and juicy. Great quality as always from D.R.STORES.', date: '2 days ago', helpful: 24, avatar: '🌸' },
-  { name: 'Rahul M.', rating: 5, text: 'Best vegetables I\'ve ordered online. The freshness is unmatched. Delivery was quick too!', date: '5 days ago', helpful: 18, avatar: '🌟' },
-  { name: 'Ananya K.', rating: 4, text: 'Good quality and reasonable prices. The packaging was also nice. Will order again.', date: '1 week ago', helpful: 12, avatar: '✨' },
-  { name: 'Vikram R.', rating: 5, text: 'My go-to store for fresh veggies. The organic selection is excellent. Highly recommended!', date: '2 weeks ago', helpful: 31, avatar: '💚' },
-  { name: 'Meera T.', rating: 4, text: 'Fresh produce, fair prices, and friendly delivery. What more do you need?', date: '3 weeks ago', helpful: 9, avatar: '🌿' },
-]
-
 const nutritionIcons = {
   calories: '🔥', protein: '💪', carbs: '🌾', fiber: '🌿', fat: '🫒',
 }
 
 export default function ProductDetailPage() {
   const { id } = useParams()
+  const [reviews, setReviews] = useState([])
+  const [reviewsLoading, setReviewsLoading] = useState(true)
   const navigate = useNavigate()
   const { products, productById, loading } = useProducts()
+  useEffect(() => {
+    if (!id) return
+  
+    setReviewsLoading(true)
+  
+    reviewApi.list({ productId: id })
+      .then((data) => setReviews(Array.isArray(data) ? data : data?.items || []))
+      .catch((error) => {
+        console.error('Failed to load product reviews:', error)
+        setReviews([])
+      })
+      .finally(() => setReviewsLoading(false))
+  }, [id])
   const product = productById(id)
   const [selectedWeight, setSelectedWeight] = useState('')
   const [qty, setQty] = useState(1)
@@ -157,7 +165,7 @@ export default function ProductDetailPage() {
     { id: 'benefits', label: 'Benefits', icon: Leaf },
     { id: 'origin', label: 'Origin', icon: MapPin },
     { id: 'storage', label: 'Storage', icon: Thermometer },
-    { id: 'reviews', label: `Reviews (${product.reviews})`, icon: ThumbsUp },
+    { id: 'reviews', label: `Reviews (${reviews.length})`, icon: ThumbsUp },
   ]
 
   return (
@@ -528,13 +536,37 @@ export default function ProductDetailPage() {
                       <Star className="w-4 h-4 text-accent fill-accent" />
                       <span className="text-base font-bold text-dark">{product.rating}</span>
                       <span className="text-sm text-dark/35">/ 5</span>
-                      <span className="text-sm text-dark/35 ml-1">({product.reviews})</span>
+                      <span className="text-sm text-dark/35 ml-1">({reviews.length})</span>
                     </div>
                   </div>
                   <div className="space-y-3">
-                    {sampleReviews.map((r, i) => (
-                      <ReviewCard key={i} review={r} index={i} />
-                    ))}
+                  {reviewsLoading ? (
+                  <div className="space-y-3">
+    <Skeleton className="h-28 w-full" />
+    <Skeleton className="h-28 w-full" />
+  </div>
+) : reviews.length > 0 ? (
+  reviews.map((review, i) => (
+    <ReviewCard key={review._id || i} review={{
+      name: review.user?.name || review.userName || 'Customer',
+      rating: review.rating,
+      text: review.comment || review.text || '',
+      date: review.createdAt
+        ? new Date(review.createdAt).toLocaleDateString('en-IN')
+        : '',
+      helpful: review.helpful ?? 0,
+      avatar: review.user?.avatar || '👤',
+    }} index={i} />
+  ))
+) : (
+  <div className="py-12 text-center rounded-2xl bg-white border border-black/5">
+    <ThumbsUp className="w-8 h-8 mx-auto mb-3 text-dark/20" />
+    <p className="text-sm font-semibold text-dark/60">No reviews yet</p>
+    <p className="text-xs text-dark/35 mt-1">
+      Be the first to review this product.
+    </p>
+  </div>
+)}
                   </div>
                 </div>
               )}

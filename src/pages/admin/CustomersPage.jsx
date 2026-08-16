@@ -137,6 +137,52 @@ function RowActions({ customer, onAction }) {
 }
 
 /* ================= MAIN PAGE ================= */
+const exportCustomersCsv = (customersToExport) => {
+  if (!customersToExport?.length) return false
+
+  const headers = [
+    'Customer ID',
+    'Name',
+    'Phone',
+    'Email',
+    'Orders',
+    'Lifetime Spend',
+    'Status',
+    'Joined',
+  ]
+
+  const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
+
+  const rows = customersToExport.map((c) => [
+    c._id,
+    c.name,
+    c.phone,
+    c.email,
+    c.orderCount ?? c.ordersCount ?? c.orders ?? 0,
+    c.lifetimeSpend ?? 0,
+    c.status || (c.blocked ? 'Blocked' : 'Active'),
+    c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN') : '',
+  ])
+
+  const csv = [
+    headers,
+    ...rows,
+  ].map((row) => row.map(escapeCsv).join(',')).join('\r\n')
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+
+  link.href = url
+  link.download = `D.R.STORES-Customers-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+
+  return true
+}
+
 export default function CustomersPage() {
   const navigate = useNavigate()
   const { customers, loading, toggleBlock, deleteCustomers } = useCustomers()
@@ -187,16 +233,42 @@ export default function CustomersPage() {
 
   const handleRowAction = (action, customer) => {
     if (action === 'view') navigate(`/admin/customers/${customer._id}`)
-    else if (action === 'call') addToast(`Calling ${customer.name} (demo)`, 'info', 2000)
-    else if (action === 'whatsapp') addToast(`Opening WhatsApp with ${customer.name} (demo)`, 'info', 2000)
-    else if (action === 'email') addToast(`Opening email to ${customer.email} (demo)`, 'info', 2000)
+      else if (action === 'call') {
+        if (customer.phone) {
+          window.location.href = `tel:${customer.phone.replace(/\D/g, '')}`
+        } else {
+          addToast('This customer has no phone number', 'info', 2200)
+        }
+      }
+      else if (action === 'whatsapp') {
+        if (customer.phone) {
+          const phone = customer.phone.replace(/\D/g, '')
+          const whatsappPhone = phone.length === 10 ? `91${phone}` : phone
+          window.open(`https://wa.me/${whatsappPhone}`, '_blank', 'noopener,noreferrer')
+        } else {
+          addToast('This customer has no phone number', 'info', 2200)
+        }
+      }
+      else if (action === 'email') {
+        if (customer.email) {
+          window.location.href = `mailto:${customer.email}`
+        } else {
+          addToast('This customer has no email address', 'info', 2200)
+        }
+      }
     else if (action === 'block') toggleBlock(customer._id)
   }
 
   const handleBulk = (action) => {
     const ids = [...selected]
     if (!ids.length) return
-    if (action === 'export') addToast(`Exporting ${ids.length} customers (demo)`, 'success', 2400)
+    if (action === 'export') {
+      const selectedCustomers = customers.filter((c) => selected.has(c._id))
+      if (exportCustomersCsv(selectedCustomers)) {
+        addToast(`${selectedCustomers.length} customers exported as CSV`, 'success', 2400)
+        setSelected(new Set())
+      }
+    }
     else if (action === 'delete') setDeleteTarget({ bulk: true })
     else if (action === 'block') { ids.forEach((id) => toggleBlock(id)); setSelected(new Set()) }
   }
@@ -219,7 +291,11 @@ export default function CustomersPage() {
             <h1 className="font-serif-display text-2xl font-bold text-dark tracking-tight">Customers</h1>
             <p className="text-xs text-dark/45 mt-0.5">{counts.total} registered · {inr(counts.lifetimeSpend)} total lifetime spend · {counts.vip} VIP</p>
           </div>
-          <button onClick={() => addToast('Customer export started (demo)', 'success', 2400)} className="ml-auto inline-flex items-center gap-2 h-10 px-4 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold shadow-md shadow-primary/15 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+          <button onClick={() => {
+  if (exportCustomersCsv(customers)) {
+    addToast(`${customers.length} customers exported as CSV`, 'success', 2400)
+  }
+}} className="ml-auto inline-flex items-center gap-2 h-10 px-4 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold shadow-md shadow-primary/15 hover:shadow-lg hover:-translate-y-0.5 transition-all">
             <Download className="w-4 h-4" /> Export
           </button>
         </div>

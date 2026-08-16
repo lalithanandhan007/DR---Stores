@@ -17,6 +17,7 @@ import ConfirmModal from '../../components/orders/ConfirmModal'
 import AssignDeliveryModal from '../../components/orders/AssignDeliveryModal'
 import Avatar from '../../components/account/Avatar'
 import { inr, formatTime, formatDateTime, timeAgo } from '../../utils/format'
+import { downloadOrderInvoice } from '../../utils/invoicePdf'
 
 /* Contextual status actions per current order status */
 const STATUS_ACTIONS = {
@@ -168,7 +169,14 @@ export default function OrderDetailPage() {
                 <RefreshCcw className="w-4 h-4" /> Process Refund
               </button>
             )}
-            <button onClick={() => addToast('Invoice PDF downloaded (demo)', 'success', 2400)} className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
+            <button onClick={() => {
+            try {
+                downloadOrderInvoice(order)
+                addToast('Invoice downloaded successfully', 'success', 2600)
+                } catch (err) {
+                addToast('Could not generate invoice', 'error', 3000)
+             }
+}} className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
               <Download className="w-4 h-4" /> Download
             </button>
             <button onClick={() => window.print()} className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
@@ -263,7 +271,14 @@ export default function OrderDetailPage() {
           {/* Invoice */}
           <Card title="Invoice" subtitle="Printable invoice for this order" delay={0.15} action={
             <div className="flex gap-2">
-              <button onClick={() => addToast('Invoice PDF downloaded (demo)', 'success', 2400)} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-white border border-black/8 text-[11px] font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
+              <button onClick={() => {
+  try {
+    downloadOrderInvoice(order)
+    addToast('Invoice downloaded successfully', 'success', 2600)
+  } catch (err) {
+    addToast('Could not generate invoice', 'error', 3000)
+  }
+}} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-white border border-black/8 text-[11px] font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
                 <Download className="w-3.5 h-3.5" /> Download
               </button>
               <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white text-[11px] font-bold shadow-sm shadow-primary/15 transition-all">
@@ -317,9 +332,22 @@ export default function OrderDetailPage() {
               </div>
             </div>
 
-            <button onClick={() => addToast('Opening WhatsApp chat (demo)', 'info', 2400)} className="mt-4 w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-primary/15 hover:shadow-lg transition-all">
-              <MessageSquare className="w-4 h-4" /> Message Customer
-            </button>
+            <button
+  onClick={() => {
+    const phone = order?.customer?.phone
+
+    if (phone) {
+      const cleaned = phone.replace(/\D/g, '')
+      const whatsappPhone = cleaned.length === 10 ? `91${cleaned}` : cleaned
+      window.open(`https://wa.me/${whatsappPhone}`, '_blank', 'noopener,noreferrer')
+    } else {
+      addToast('This customer has no phone number', 'info', 2200)
+    }
+  }}
+  className="mt-4 w-full h-10 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-primary/15 hover:shadow-lg transition-all"
+>
+  <MessageSquare className="w-4 h-4" /> Message Customer
+</button>
           </Card>
 
           {/* Delivery */}

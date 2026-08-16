@@ -89,10 +89,24 @@ export default function CustomerDetailPage() {
             <p className="text-xs text-dark/45 mt-1.5 font-light">Joined {formatDate(customer.joinedAt)} · Last active {timeAgo(customer.lastActiveAt)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 ml-auto">
-            <button onClick={() => addToast('Opening WhatsApp chat (demo)', 'info', 2400)} className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-all">
+            <button onClick={() => {
+  if (customer.phone) {
+    const phone = customer.phone.replace(/\D/g, '')
+    const whatsappPhone = phone.length === 10 ? `91${phone}` : phone
+    window.open(`https://wa.me/${whatsappPhone}`, '_blank', 'noopener,noreferrer')
+  } else {
+    addToast('This customer has no phone number', 'info', 2200)
+  }
+}} className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-all">
               <MessageSquare className="w-4 h-4" /> WhatsApp
             </button>
-            <button onClick={() => addToast(`Calling ${customer.phone} (demo)`, 'info', 2000)} className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
+            <button onClick={() => {
+  if (customer.phone) {
+    window.location.href = `tel:${customer.phone.replace(/\D/g, '')}`
+  } else {
+    addToast('This customer has no phone number', 'info', 2200)
+  }
+}} className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-white border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
               <Phone className="w-4 h-4" /> Call
             </button>
             <button onClick={() => setBlockConfirm(true)} className={`inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-xs font-bold transition-all ${customer.blocked ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100' : 'bg-red-50 text-red-500 border border-red-200 hover:bg-red-100'}`}>

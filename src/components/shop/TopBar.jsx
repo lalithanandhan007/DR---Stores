@@ -1,5 +1,5 @@
 import { Search, SlidersHorizontal, Grid3X3, List, X } from 'lucide-react'
-import { sortOptions } from '../../data/products'
+import { sortOptions } from '../../data/productConfig'
 
 export default function TopBar({ filters, setFilters, viewMode, setViewMode, resultCount, onOpenFilters }) {
   const set = (key, val) => setFilters((f) => ({ ...f, [key]: val }))
