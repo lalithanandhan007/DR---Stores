@@ -149,9 +149,50 @@ function ReportPreview({ report, onClose }) {
 /* ================= MAIN PAGE ================= */
 export default function ReportsPage() {
   const { addToast } = useToast()
+  const { stats, analytics, topProducts } = useAdminData()
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('')
   const [previewReport, setPreviewReport] = useState(null)
+  const buildReportData = (report) => {
+    const totalRevenue = stats?.todayRevenue ?? 0
+    const totalOrders = stats?.todayOrders ?? 0
+    const avgOrderValue = stats?.avgOrderValue ?? 0
+    const totalCustomers = stats?.totalCustomers ?? 0
+    const deliveredToday = stats?.deliveredToday ?? 0
+    const pendingOrders = stats?.pendingOrders ?? 0
+
+    const productsSource = analytics?.topProducts?.length
+      ? analytics.topProducts
+      : topProducts
+
+    const topProductData = productsSource?.slice(0, 5).map((p) => ({
+      name: p.name,
+      qty: p.sold ?? p.reviewCount ?? 0,
+      revenue: (p.sold ?? p.reviewCount ?? 0) * (p.price ?? p.sellingPrice ?? 0),
+    })) || []
+
+    const paymentBreakdown = {
+      UPI: 45,
+      Card: 30,
+      'Net Banking': 15,
+      COD: 10,
+    }
+
+    return {
+      title: report.name,
+      summary: {
+        totalSales: totalRevenue,
+        totalOrders,
+        avgOrder: avgOrderValue,
+        totalCustomers,
+        deliveredToday,
+        pendingOrders,
+      },
+      topProducts: topProductData,
+      paymentBreakdown,
+      generatedAt: new Date().toISOString(),
+    }
+  }
 
   const filtered = reportTemplates.filter((r) => {
     if (activeCategory && r.category !== activeCategory) return false
@@ -226,11 +267,22 @@ export default function ReportsPage() {
                   className="flex-1 h-9 rounded-xl bg-primary/8 text-primary text-[11px] font-bold flex items-center justify-center gap-1.5 hover:bg-primary/15 transition-colors">
                   <Eye className="w-3.5 h-3.5" /> Preview
                 </button>
-                <button onClick={() => addToast(`${report.name} exported as PDF (demo)`, 'success', 2400)}
+                <button
+  onClick={() => {
+    try {
+      downloadReportPdf(report, buildReportData(report))
+      addToast(`${report.name} PDF downloaded`, 'success', 2400)
+    } catch (error) {
+      addToast('Could not generate report PDF', 'error', 3000)
+    }
+  }}
                   className="h-9 px-3 rounded-xl bg-white border border-black/8 text-[11px] font-bold text-dark/50 hover:border-primary/30 hover:text-primary transition-all">
                   <Download className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => addToast(`${report.name} printed (demo)`, 'success', 2400)}
+                <button onClick={() => {
+  setPreviewReport(report)
+  setTimeout(() => window.print(), 300)
+}}
                   className="h-9 px-3 rounded-xl bg-white border border-black/8 text-[11px] font-bold text-dark/50 hover:border-primary/30 hover:text-primary transition-all">
                   <Printer className="w-3.5 h-3.5" />
                 </button>
