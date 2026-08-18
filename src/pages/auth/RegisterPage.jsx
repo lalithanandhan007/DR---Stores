@@ -12,7 +12,7 @@ import { useToast } from '../../context/CartContext'
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function RegisterPage() {
-  const { stageRegistration, sendOtp, findAccount } = useAuth()
+  const { stageRegistration, sendOtp } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
 
@@ -28,7 +28,6 @@ export default function RegisterPage() {
     if (form.name.trim().length < 3) errs.name = 'Please enter your full name'
     if (!form.email) errs.email = 'Email is required'
     else if (!emailRegex.test(form.email)) errs.email = 'Enter a valid email address'
-    else if (findAccount(form.email)) errs.email = 'An account already exists with this email'
     if (!/^[6-9]\d{9}$/.test(form.phone)) errs.phone = 'Enter a valid 10-digit mobile number'
     if (form.password.length < 6) errs.password = 'Password must be at least 6 characters'
     if (form.confirm !== form.password) errs.confirm = 'Passwords do not match'

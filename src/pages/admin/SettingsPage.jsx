@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Save, Store, Truck, CreditCard, Bell, Palette, Shield, Clock, MapPin, Phone, Mail,
-  Globe, AlertTriangle, Check, Upload, Loader2,
+  Globe, AlertTriangle, Check, Upload, Loader2, Download,
 } from 'lucide-react'
 import { DAY_LABELS } from '../../data/settingsData'
 import { settingsApi } from '../../api'
@@ -43,6 +43,37 @@ export default function SettingsPage() {
   const [settingsLoading, setSettingsLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const set = (k, v) => setSettings((s) => s ? ({ ...s, [k]: v }) : s)
+  const handleBackup = () => {
+    try {
+      const backupData = {
+        app: 'D.R.STORES',
+        type: 'Settings Backup',
+        generatedAt: new Date().toISOString(),
+        settings,
+      }
+  
+      const blob = new Blob(
+        [JSON.stringify(backupData, null, 2)],
+        { type: 'application/json' }
+      )
+  
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+  
+      link.href = url
+      link.download = `dr-stores-backup-${new Date().toISOString().slice(0, 10)}.json`
+  
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+  
+      URL.revokeObjectURL(url)
+  
+      addToast('Backup downloaded successfully', 'success', 2800)
+    } catch (error) {
+      addToast('Could not create backup', 'error', 3000)
+    }
+  }
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -268,9 +299,11 @@ export default function SettingsPage() {
               </select>
             </div>
           )}
-          <button onClick={() => addToast('Manual backup initiated (demo)', 'success', 2800)} className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all">
-            <Shield className="w-4 h-4" /> Backup Now
-          </button>
+          <button onClick={handleBackup}
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/8 text-xs font-bold text-dark/60 hover:border-primary/30 hover:text-primary transition-all"
+>
+  <Download className="w-4 h-4" /> Backup Now
+</button>
         </div>
       </Section>
     </div>

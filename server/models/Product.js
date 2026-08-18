@@ -25,7 +25,14 @@ const productSchema = new mongoose.Schema({
   todaysPick: { type: Boolean, default: false },
   featured: { type: Boolean, default: false },
   badges: [{ type: String }],
-  weightOptions: [{ type: String }],
+
+  variants: [{
+    weight: { type: String, required: true },
+    price: { type: Number, required: true },
+    originalPrice: { type: Number, default: 0 },
+    stock: { type: Number, default: 0 },
+  }],
+  
   tags: [{ type: String }],
   rating: { type: Number, default: 0, min: 0, max: 5 },
   reviewCount: { type: Number, default: 0 },

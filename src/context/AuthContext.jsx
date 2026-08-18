@@ -167,24 +167,33 @@ export function AuthProvider({ children }) {
   /* ---------- OTP ----------
      For login/reset the backend generates & stores a real OTP.
      For registration the OTP is simulated (no SMS provider). */
-  const sendOtp = useCallback((identifier, purpose) => {
-    const otp = String(Math.floor(100000 + Math.random() * 900000))
-    const pending = { otp, identifier, purpose, expiresAt: Date.now() + 5 * 60 * 1000 }
-    pendingOtpRef.current = pending
-    setOtpTick((t) => t + 1)
-    if (purpose !== 'register') {
-      authApi.forgotPassword(identifier)
-        .then((res) => {
+     const sendOtp = useCallback(async (identifier, purpose) => {
+      const otp = String(Math.floor(100000 + Math.random() * 900000))
+    
+      const pending = {
+        otp,
+        identifier,
+        purpose,
+        expiresAt: Date.now() + 5 * 60 * 1000,
+      }
+    
+      if (purpose !== 'register') {
+        try {
+          const res = await authApi.forgotPassword(identifier)
+    
           if (res?.otp) {
             pending.otp = res.otp
-            pendingOtpRef.current = pending
-            setOtpTick((t) => t + 1)
           }
-        })
-        .catch(() => {})
-    }
-    return pending
-  }, [])
+        } catch (err) {
+          console.error('Failed to request OTP:', err)
+        }
+      }
+    
+      pendingOtpRef.current = pending
+      setOtpTick((t) => t + 1)
+    
+      return pending
+    }, [])
 
   const verifyOtp = useCallback(async (identifier, code, purpose = 'login') => {
     if (purpose === 'register') {

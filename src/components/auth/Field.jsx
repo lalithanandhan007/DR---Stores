@@ -45,13 +45,26 @@ export function Field({
           </span>
         )}
         {leftAddon && (
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark/45 text-sm font-semibold pointer-events-none">
-            {leftAddon}
-          </span>
-        )}
+  <span
+    className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-2 text-dark/45 text-sm font-semibold pointer-events-none ${
+      Icon ? 'left-11' : 'left-4'
+    }`}
+  >
+    {leftAddon}
+    <span className="w-px h-5 bg-black/10" />
+  </span>
+)}
         <input
           {...props}
-          className={`${baseFieldClass} ${Icon ? 'pl-11' : ''} ${leftAddon ? 'pl-[4.25rem]' : ''} ${fieldBorder(error, valid)}`}
+          className={`${baseFieldClass} ${
+            leftAddon
+              ? Icon
+                ? 'pl-[6.5rem]'
+                : 'pl-[5rem]'
+              : Icon
+                ? 'pl-11'
+                : ''
+          } ${fieldBorder(error, valid)}`}
         />
         {children}
         {valid && !error && (

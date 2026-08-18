@@ -141,7 +141,7 @@ export default function VerifyOtpPage() {
           <p className="text-xs text-dark/55">This code helps keep your account secure.</p>
         </div>
 
-        {/* Demo message preview */}
+        {/* Verification code preview */}
         {pendingOtpPreview && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -150,7 +150,7 @@ export default function VerifyOtpPage() {
           >
             <p className="text-[11px] font-semibold uppercase tracking-wider text-accent mb-1 flex items-center justify-center gap-1.5">
               <span className="relative flex w-2 h-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" /><span className="relative inline-flex rounded-full w-2 h-2 bg-accent" /></span>
-              Demo message
+              Verification code
             </p>
             <p className="text-sm text-dark/70">
               Your D.R.STORES OTP is <b className="text-xl font-black text-dark tracking-[0.2em]">{pendingOtpPreview}</b>

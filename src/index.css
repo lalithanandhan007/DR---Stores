@@ -246,25 +246,28 @@ html.lenis body {
   }
 
   #report-print,
-  #report-print * {
-    visibility: visible !important;
-  }
+  #report-print *,
+  #bulk-invoice-print,
+  #bulk-invoice-print * {
+  visibility: visible !important;
+}
 
-  #report-print {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    height: auto !important;
-    max-height: none !important;
-    overflow: visible !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-  }
+  #report-print,
+  #bulk-invoice-print {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
 
   #report-print * {
     overflow: visible !important;
@@ -274,6 +277,11 @@ html.lenis body {
     position: absolute !important;
   }
 
+  .bulk-invoice-page-break {
+    break-after: page;
+    page-break-after: always;
+  }
+  
   @page {
     size: A4;
     margin: 10mm;

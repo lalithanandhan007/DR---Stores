@@ -4,6 +4,13 @@ import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { generateToken, setTokenCookie } from '../utils/generateToken.js';
 
+const normalizePhone = (value = '') => {
+  const digits = String(value).replace(/\D/g, '');
+  return digits.length === 12 && digits.startsWith('91')
+    ? digits.slice(2)
+    : digits;
+};
+
 export const register = asyncHandler(async (req, res) => {
   const { name, email, phone, password } = req.body;
   if (!name || !email || !password) throw new ApiError(400, 'Name, email and password are required');
@@ -84,12 +91,16 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const { identifier } = req.body;
   if (!identifier) throw new ApiError(400, 'Email or phone number is required');
 
-  const user = await User.findOne({
-    $or: [
-      { email: identifier.toLowerCase() },
-      { phone: identifier },
-    ],
-  });
+  const normalizedIdentifier = identifier.trim()
+const normalizedPhone = normalizePhone(identifier)
+
+const user = await User.findOne({
+  $or: [
+    { email: normalizedIdentifier.toLowerCase() },
+    { phone: normalizedIdentifier },
+    { phone: normalizedPhone },
+  ],
+});
 
   // Always return success to prevent enumeration
   if (!user) return res.json(ApiResponse.success(null, 'If an account exists, an OTP has been sent'));
@@ -99,7 +110,6 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   user.otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
   await user.save({ validateModifiedOnly: true });
 
-  // In production, send OTP via SMS/email. For demo, return it in the response.
   res.json(ApiResponse.success({ otp, identifier }, 'OTP sent successfully'));
 });
 
@@ -107,9 +117,15 @@ export const verifyOtp = asyncHandler(async (req, res) => {
   const { identifier, code, purpose } = req.body;
   if (!identifier || !code) throw new ApiError(400, 'Identifier and OTP code are required');
 
-  const user = await User.findOne({
-    $or: [{ email: identifier.toLowerCase() }, { phone: identifier }],
-  }).select('+otp +otpExpiry');
+const normalizedIdentifier = identifier.trim()
+const normalizedPhone = normalizePhone(identifier)
+
+const user = await User.findOne({
+  $or: [
+    { email: normalizedIdentifier.toLowerCase() },
+    { phone: normalizedPhone },
+  ],
+}).select('+otp +otpExpiry')
 
   if (!user || !user.otp) throw new ApiError(400, 'No OTP requested');
   if (new Date() > user.otpExpiry) throw new ApiError(400, 'OTP expired. Request a new one.');

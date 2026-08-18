@@ -14,6 +14,7 @@ import PaymentBadge from '../../components/orders/PaymentBadge'
 import ConfirmModal from '../../components/orders/ConfirmModal'
 import ExportModal from '../../components/orders/ExportModal'
 import InvoiceModal from '../../components/orders/InvoiceModal'
+import BulkInvoicePrint from '../../components/orders/BulkInvoicePrint'
 import { downloadOrderInvoice } from '../../utils/invoicePdf'
 import { inr, formatTime, formatDate, timeAgo } from '../../utils/format'
 
@@ -227,6 +228,7 @@ export default function OrdersPage() {
   const [deleteTarget, setDeleteTarget] = useState(null) // { order } or { bulk: true }
   const [exportOpen, setExportOpen] = useState(false)
   const [invoiceOrder, setInvoiceOrder] = useState(null)
+  const [bulkPrintOrders, setBulkPrintOrders] = useState([])
 
   const counts = useMemo(() => {
     const c = { total: orders.length, revenue: 0 }
@@ -303,7 +305,14 @@ export default function OrdersPage() {
       else addToast('No pending orders selected to accept', 'info', 2600)
       setSelected(new Set())
     } else if (action === 'print') {
-      addToast(`Printing ${ids.length} invoice${ids.length > 1 ? 's' : ''} (demo)`, 'success', 2400)
+      const selectedOrders = orders.filter((o) => ids.includes(o._id))
+    
+      if (!selectedOrders.length) {
+        addToast('No orders selected for printing', 'info', 2400)
+        return
+      }
+    
+      setBulkPrintOrders(selectedOrders)
       setSelected(new Set())
     } else if (action === 'export') setExportOpen(true)
     else if (action === 'delete') setDeleteTarget({ bulk: true })
@@ -575,6 +584,13 @@ export default function OrdersPage() {
         onClose={() => setExportOpen(false)}
       />
       <AnimatePresence>{invoiceOrder && <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />}</AnimatePresence>
+
+      {bulkPrintOrders.length > 0 && (
+  <BulkInvoicePrint
+    orders={bulkPrintOrders}
+    onDone={() => setBulkPrintOrders([])}
+  />
+)}
     </div>
   )
 }
