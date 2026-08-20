@@ -39,6 +39,19 @@ export function DeliveryProvider({ children }) {
       .catch((err) => addToast(getErrorMessage(err, 'Update failed'), 'error', 3000))
   }, [partners, addToast])
 
+  const createPartner = useCallback((payload) => {
+    return deliveryApi.create(payload)
+      .then((partner) => {
+        setPartners((prev) => [partner, ...prev])
+        addToast('Delivery partner added successfully', 'success', 2500)
+        return partner
+      })
+      .catch((err) => {
+        addToast(getErrorMessage(err, 'Could not add delivery partner'), 'error', 3000)
+        throw err
+      })
+  }, [addToast])
+
   const updateStatus = useCallback((id, status) => {
     deliveryApi.update(id, { status })
       .then(() => {
@@ -58,7 +71,7 @@ export function DeliveryProvider({ children }) {
   }, [addToast])
 
   const value = useMemo(() => ({
-    partners, getPartner, toggleOnline, updateStatus, deletePartners,
+    partners, getPartner, createPartner, toggleOnline, updateStatus, deletePartners,
     loading, error, refresh: load,
   }), [partners, getPartner, toggleOnline, updateStatus, deletePartners, loading, error, load])
 

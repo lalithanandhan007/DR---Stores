@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Filter, ArrowUpDown, ChevronDown, ChevronLeft, ChevronRight, X,
-  MoreHorizontal, Phone, Truck, Star, Clock, Package, Eye, CheckCircle2, ToggleLeft, ToggleRight,
+  MoreHorizontal, Phone, Truck, Star, Clock, Package, Eye, CheckCircle2, ToggleLeft, ToggleRight, Plus,
 } from 'lucide-react'
 import { DELIVERY_STATUSES, getDeliveryStatusMeta } from '../../data/deliveryData'
 import { useDelivery } from '../../context/DeliveryContext'
@@ -88,7 +88,7 @@ function RowActions({ partner, onAction }) {
 
 /* ================= MAIN PAGE ================= */
 export default function DeliveryPage() {
-  const { partners, toggleOnline, loading } = useDelivery()
+  const { partners, createPartner, toggleOnline, loading } = useDelivery()
   const { addToast } = useToast()
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ status: '' })
@@ -97,6 +97,56 @@ export default function DeliveryPage() {
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage] = useState(1)
   const [viewPartner, setViewPartner] = useState(null)
+  const [addOpen, setAddOpen] = useState(false)
+
+  const [newPartner, setNewPartner] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    vehicle: '',
+    vehicleType: 'Scooter',
+    zone: '',
+    shift: '',
+  })
+
+  const handleCreatePartner = async (e) => {
+    e.preventDefault()
+  
+    if (!newPartner.name.trim() || !newPartner.phone.trim()) {
+      addToast('Name and phone number are required', 'error', 2500)
+      return
+    }
+  
+    try {
+      await createPartner({
+        ...newPartner,
+        name: newPartner.name.trim(),
+        phone: newPartner.phone.trim(),
+        email: newPartner.email.trim(),
+        vehicle: newPartner.vehicle.trim(),
+        zone: newPartner.zone.trim(),
+        shift: newPartner.shift.trim(),
+        status: 'offline',
+      })
+  
+      addToast('Delivery partner added successfully', 'success', 2500)
+  
+      setNewPartner({
+        name: '',
+        phone: '',
+        email: '',
+        vehicle: '',
+        vehicleType: 'Scooter',
+        zone: '',
+        shift: '',
+      })
+  
+      setAddOpen(false)
+    } catch (err) {
+      addToast('Could not create delivery partner', 'error', 3000)
+    }
+  }
+  const [adding, setAdding] = useState(false)
 
   const counts = useMemo(() => {
     const c = { total: partners.length, totalDeliveries: 0, onTimePct: 0 }
@@ -158,12 +208,22 @@ export default function DeliveryPage() {
   return (
     <div className="space-y-5">
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
-        <div className="flex flex-wrap items-center gap-3">
-          <div>
-            <h1 className="font-serif-display text-2xl font-bold text-dark tracking-tight">Delivery Partners</h1>
-            <p className="text-xs text-dark/45 mt-0.5">{counts.total} partners · {counts.totalDeliveries.toLocaleString('en-IN')} total deliveries · {counts.onTimePct}% on-time</p>
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+  <div>
+    <h1 className="font-serif-display text-2xl font-bold text-dark tracking-tight">Delivery Partners</h1>
+    <p className="text-xs text-dark/45 mt-0.5">
+      {counts.total} partners · {counts.totalDeliveries.toLocaleString('en-IN')} total deliveries · {counts.onTimePct}% on-time
+    </p>
+  </div>
+
+  <button
+    onClick={() => setAddOpen(true)}
+    className="inline-flex items-center gap-2 h-10 px-4 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold shadow-md shadow-primary/15 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+  >
+    <Plus className="w-4 h-4" />
+    Add Partner
+  </button>
+</div>
         <div className="mt-4"><KpiStrip counts={counts} statusFilter={filters.status} onSelect={(s) => { setFilters((f) => ({ ...f, status: s })); setPage(1) }} /></div>
       </motion.div>
 
@@ -390,7 +450,147 @@ export default function DeliveryPage() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
-    </div>
-  )
+          </AnimatePresence>
+
+{/* Add Delivery Partner Modal */}
+<AnimatePresence>
+  {addOpen && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+    >
+      <div
+        className="absolute inset-0 bg-dark/50 backdrop-blur-sm"
+        onClick={() => setAddOpen(false)}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-dark">
+              Add Delivery Partner
+            </h2>
+            <p className="text-sm text-dark/50 mt-1">
+              Create a new delivery partner.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setAddOpen(false)}
+            className="w-9 h-9 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleCreatePartner} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={newPartner.name}
+            onChange={(e) =>
+              setNewPartner({ ...newPartner, name: e.target.value })
+            }
+            className="w-full h-11 px-4 rounded-xl border border-black/10 outline-none focus:border-primary"
+            required
+          />
+
+          <input
+            type="tel"
+            placeholder="Phone Number"
+            value={newPartner.phone}
+            onChange={(e) =>
+              setNewPartner({ ...newPartner, phone: e.target.value })
+            }
+            className="w-full h-11 px-4 rounded-xl border border-black/10 outline-none focus:border-primary"
+            required
+          />
+
+          <input
+            type="email"
+            placeholder="Email Address"
+            value={newPartner.email}
+            onChange={(e) =>
+              setNewPartner({ ...newPartner, email: e.target.value })
+            }
+            className="w-full h-11 px-4 rounded-xl border border-black/10 outline-none focus:border-primary"
+          />
+
+          <input
+            type="text"
+            placeholder="Vehicle Number / Name"
+            value={newPartner.vehicle}
+            onChange={(e) =>
+              setNewPartner({ ...newPartner, vehicle: e.target.value })
+            }
+            className="w-full h-11 px-4 rounded-xl border border-black/10 outline-none focus:border-primary"
+          />
+
+          <select
+            value={newPartner.vehicleType}
+            onChange={(e) =>
+              setNewPartner({
+                ...newPartner,
+                vehicleType: e.target.value,
+              })
+            }
+            className="w-full h-11 px-4 rounded-xl border border-black/10 outline-none focus:border-primary"
+          >
+            <option value="Scooter">Scooter</option>
+            <option value="Motorcycle">Motorcycle</option>
+            <option value="Van">Van</option>
+            <option value="Bicycle">Bicycle</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Delivery Zone"
+            value={newPartner.zone}
+            onChange={(e) =>
+              setNewPartner({ ...newPartner, zone: e.target.value })
+            }
+            className="w-full h-11 px-4 rounded-xl border border-black/10 outline-none focus:border-primary"
+          />
+
+          <input
+            type="text"
+            placeholder="Shift (e.g. 9 AM - 6 PM)"
+            value={newPartner.shift}
+            onChange={(e) =>
+              setNewPartner({ ...newPartner, shift: e.target.value })
+            }
+            className="w-full h-11 px-4 rounded-xl border border-black/10 outline-none focus:border-primary"
+          />
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setAddOpen(false)}
+              className="flex-1 h-11 rounded-xl border border-black/10 font-semibold text-dark"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={adding}
+              className="flex-1 h-11 rounded-xl bg-primary text-white font-semibold disabled:opacity-60"
+            >
+              {adding ? 'Adding...' : 'Add Partner'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+</div>
+)
 }
