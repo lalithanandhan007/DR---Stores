@@ -21,6 +21,11 @@ import { downloadOrderInvoice } from '../../utils/invoicePdf'
 
 /* Contextual status actions per current order status */
 const STATUS_ACTIONS = {
+  confirmed: [
+    { status: 'accepted', label: 'Accept Order', icon: CheckCircle2, tone: 'primary' },
+    { status: 'cancelled', label: 'Reject Order', icon: XCircle, tone: 'danger' },
+  ],
+  
   pending: [
     { status: 'accepted', label: 'Accept Order', icon: CheckCircle2, tone: 'primary' },
     { status: 'cancelled', label: 'Reject Order', icon: XCircle, tone: 'danger' },

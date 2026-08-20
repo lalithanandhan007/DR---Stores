@@ -9,11 +9,11 @@ const ETA_PRESETS = [20, 30, 45, 60]
 export default function AssignDeliveryModal({ order, onClose }) {
   const { assignPartner } = useOrders()
   const { partners } = useDelivery()
-  const [selected, setSelected] = useState(partners[0]?._id || null)
+  const [selected, setSelected] = useState(partners.filter(Boolean)[0]?._id || null)
   const [eta, setEta] = useState(30)
   const [busy, setBusy] = useState(false)
 
-  const partner = partners.find((p) => p._id === selected)
+  const partner = partners.find((p) => p?._id === selected)
   if (!order) return null
 
   const handle = (dispatch) => {
@@ -55,7 +55,7 @@ export default function AssignDeliveryModal({ order, onClose }) {
           <div>
             <p className="text-xs font-bold text-dark/60 uppercase tracking-wider mb-2.5">Choose partner</p>
             <div className="space-y-2.5">
-              {partners.map((p) => {
+            {partners.filter(Boolean).map((p) => {
                 const active = selected === p._id
                 return (
                   <button
@@ -79,7 +79,7 @@ export default function AssignDeliveryModal({ order, onClose }) {
                       <span className="block text-[11px] text-dark/45 truncate mt-0.5">{p.vehicle}</span>
                       <span className="flex items-center gap-2 text-[11px] text-dark/50 mt-0.5">
                         <span className="inline-flex items-center gap-0.5"><Star className="w-3 h-3 text-amber-500 fill-amber-500" /> {p.rating}</span>
-                        <span>· {p.deliveries.toLocaleString('en-IN')} deliveries</span>
+                        <span>· {(p.deliveries || 0).toLocaleString('en-IN')} deliveries</span>
                         <span className="inline-flex items-center gap-1"><Phone className="w-3 h-3" /> {p.phone}</span>
                       </span>
                     </span>
