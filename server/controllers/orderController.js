@@ -19,9 +19,26 @@ export const placeOrder = asyncHandler(async (req, res) => {
 
   for (const item of items) {
     const product = await (await import('../models/Product.js')).default.findById(item.productId || item.product);
+    const inventory = await Inventory.findOne({
+      product: item.productId || item.product
+    });
+
+    if (!inventory || inventory.currentStock < (item.qty || 1)) {
+      throw new ApiError(
+        400,
+        `${product?.name || 'Product'} does not have enough stock`
+      );
+    }
+    
     if (!product) continue;
-    const price = product.price;
-    const mrp = product.originalPrice;
+    const selectedWeight = item.weight || product.weightOptions?.[0] || '';
+
+    const selectedVariant = product.variants?.find(
+      (variant) => variant.weight === selectedWeight
+);
+
+    const price = selectedVariant?.price ?? product.price;
+    const mrp = selectedVariant?.originalPrice ?? product.originalPrice;
     const qty = item.qty || 1;
     subtotal += price * qty;
     orderItems.push({
@@ -29,7 +46,7 @@ export const placeOrder = asyncHandler(async (req, res) => {
       name: product.name,
       emoji: product.emoji,
       gradient: product.gradient,
-      weight: item.weight || product.weightOptions?.[0] || '',
+      weight: selectedWeight,
       qty,
       price,
       mrp,
