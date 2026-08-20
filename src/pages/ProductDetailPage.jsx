@@ -100,7 +100,9 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (product) {
-      setSelectedWeight((w) => w || product.weightOptions?.[0] || '')
+      setSelectedWeight(
+        (w) => w || product.variants?.[0]?.weight || product.weightOptions?.[0] || ''
+      )
       setQty(1)
       addRecent(product)
     }
@@ -151,7 +153,17 @@ export default function ProductDetailPage() {
     )
   }
 
-  const discount = product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0
+  const selectedVariant =
+  product.variants?.find((variant) => variant.weight === selectedWeight) || null
+
+const currentPrice = selectedVariant?.price ?? product.price
+
+const currentOriginalPrice =
+  selectedVariant?.originalPrice ?? product.originalPrice
+
+const discount = currentOriginalPrice
+  ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
+  : 0
 
   const handleAdd = () => {
     addItem(product, selectedWeight, qty)
@@ -291,17 +303,21 @@ export default function ProductDetailPage() {
             <p className="mt-4 text-[15px] text-dark/50 leading-relaxed font-light">{product.description}</p>
 
             {/* Price */}
-            <div className="mt-6 flex items-end gap-3">
-              <span className="text-[2.5rem] font-black text-dark leading-none tracking-tight">₹{product.price}</span>
-              <span className="text-sm text-dark/35 mb-1.5">/{product.unit}</span>
-              {product.originalPrice && (
-                <>
-                  <span className="text-lg text-dark/28 line-through mb-1">₹{product.originalPrice}</span>
-                  <span className="text-sm font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/50 px-3 py-1 rounded-full mb-1">
-                    Save ₹{product.originalPrice - product.price}
-                  </span>
-                </>
-              )}
+<div className="mt-6 flex items-end gap-3">
+  <span className="text-[2.5rem] font-black text-dark leading-none tracking-tight">₹{currentPrice}</span>
+  <span className="text-sm text-dark/35 mb-1.5">/{selectedWeight || product.unit}</span>
+
+  {currentOriginalPrice && (
+    <>
+      <span className="text-lg text-dark/28 line-through mb-1">
+        ₹{currentOriginalPrice}
+      </span>
+
+      <span className="text-sm font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/50 px-3 py-1 rounded-full mb-1">
+        Save ₹{currentOriginalPrice - currentPrice}
+      </span>
+    </>
+  )}
             </div>
 
             {/* Stock */}
@@ -316,22 +332,25 @@ export default function ProductDetailPage() {
             <div className="my-6 h-px bg-gradient-to-r from-transparent via-black/8 to-transparent" />
 
             {/* Weight selector */}
-            {product.weightOptions && product.weightOptions.length > 0 && (
-              <div className="mb-6">
-                <span className="text-sm font-bold text-dark mb-3 block">Select Weight</span>
-                <div className="flex flex-wrap gap-2">
-                  {product.weightOptions.map((w) => (
-                    <motion.button
-                      key={w}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedWeight(w)}
-                      className={`px-6 py-3 rounded-2xl text-sm font-bold border-2 transition-all duration-300 ${
-                        selectedWeight === w
-                          ? 'bg-dark text-white border-dark shadow-lg shadow-dark/15'
-                          : 'bg-white text-dark/55 border-black/8 hover:border-dark/25 hover:text-dark'
-                      }`}
-                    >
-                      {w}
+{(product.variants?.length > 0 || product.weightOptions?.length > 0) && (
+  <div className="mb-6">
+    <span className="text-sm font-bold text-dark mb-3 block">Select Weight</span>
+    <div className="flex flex-wrap gap-2">
+      {(product.variants?.length > 0
+        ? product.variants.map((variant) => variant.weight)
+        : product.weightOptions
+      ).map((w) => (
+        <motion.button
+          key={w}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setSelectedWeight(w)}
+          className={`px-6 py-3 rounded-2xl text-sm font-bold border-2 transition-all duration-300 ${
+            selectedWeight === w
+              ? 'bg-dark text-white border-dark shadow-lg shadow-dark/15'
+              : 'bg-white text-dark/55 border-black/8 hover:border-dark/25 hover:text-dark'
+          }`}
+        >
+          {w}
                     </motion.button>
                   ))}
                 </div>

@@ -17,6 +17,16 @@ export const addToCart = asyncHandler(async (req, res) => {
   const product = await Product.findById(productId);
   if (!product) throw new ApiError(404, 'Product not found');
 
+  const selectedWeight = weight || product.variants?.[0]?.weight || product.weightOptions?.[0] || ''
+
+const selectedVariant =
+  product.variants?.find((variant) => variant.weight === selectedWeight)
+
+  const variantPrice = selectedVariant?.price ?? product.price
+
+const variantOriginalPrice =
+  selectedVariant?.originalPrice ?? product.originalPrice
+
   let cart = await Cart.findOne({ user: req.user._id });
   if (!cart) cart = await Cart.create({ _id: `cart_${req.user._id}`, user: req.user._id, items: [] });
 
@@ -30,10 +40,10 @@ export const addToCart = asyncHandler(async (req, res) => {
       product: product._id,
       productName: product.name,
       emoji: product.emoji,
-      weight: weight || product.weightOptions?.[0] || '',
+      weight: selectedWeight,
       qty: Number(qty),
-      price: product.price,
-      originalPrice: product.originalPrice,
+      price: variantPrice,
+      originalPrice: variantOriginalPrice,
       gradient: product.gradient,
     });
   }

@@ -63,44 +63,186 @@ function Step1({ form, set }) {
 }
 
 function Step2({ form, set }) {
-  const discount = form.mrp > 0 ? Math.round(((form.mrp - form.price) / form.mrp) * 100) : 0
+  const addVariant = (weight) => {
+    if (!weight.trim()) return
+
+    const exists = form.variants?.some(
+      (variant) => variant.weight === weight.trim()
+    )
+
+    if (exists) return
+
+    set('variants', [
+      ...(form.variants || []),
+      {
+        weight: weight.trim(),
+        price: '',
+        mrp: '',
+      },
+    ])
+  }
+
+  const updateVariant = (index, field, value) => {
+    const updated = [...(form.variants || [])]
+
+    updated[index] = {
+      ...updated[index],
+      [field]: value,
+    }
+
+    set('variants', updated)
+  }
+
+  const removeVariant = (index) => {
+    set(
+      'variants',
+      form.variants.filter((_, i) => i !== index)
+    )
+  }
+
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-bold text-dark">Pricing</h3>
-      <div className="grid sm:grid-cols-3 gap-4">
-        <div><label className={labelClass}>Selling Price (₹) *</label><input type="number" className={inputClass} placeholder="0" value={form.price} onChange={(e) => set('price', e.target.value)} /></div>
-        <div><label className={labelClass}>MRP (₹)</label><input type="number" className={inputClass} placeholder="0" value={form.mrp} onChange={(e) => set('mrp', e.target.value)} /></div>
-        <div><label className={labelClass}>Tax (%)</label><input type="number" className={inputClass} placeholder="0" value={form.tax} onChange={(e) => set('tax', e.target.value)} /></div>
-      </div>
-      {discount > 0 && (
-        <div className="rounded-xl bg-primary/5 border border-primary/10 px-4 py-2.5 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" /><span className="text-sm font-bold text-primary">{discount}% discount — you save ₹{form.mrp - form.price}</span>
-        </div>
-      )}
+      <h3 className="text-lg font-bold text-dark">Pricing & Variants</h3>
+
       <div>
-        <label className={labelClass}>Weight Options *</label>
+        <label className={labelClass}>Add Weight / Quantity *</label>
+
         <div className="flex flex-wrap gap-2 mt-1">
           {['250g', '500g', '1kg', '2kg', '250ml', '500ml', '1L', '1 piece'].map((w) => {
-            const active = form.weights?.includes(w)
-            return <button key={w} type="button" onClick={() => {
-              const ws = form.weights || []
-              set('weights', active ? ws.filter((x) => x !== w) : [...ws, w])
-            }} className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all ${active ? 'bg-primary text-white border-primary' : 'bg-white text-dark/55 border-black/8 hover:border-primary/30'}`}>{w}</button>
+            const active = form.variants?.some(
+              (variant) => variant.weight === w
+            )
+
+            return (
+              <button
+                key={w}
+                type="button"
+                onClick={() => active
+                  ? removeVariant(
+                      form.variants.findIndex(
+                        (variant) => variant.weight === w
+                      )
+                    )
+                  : addVariant(w)
+                }
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                  active
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-white text-dark/55 border-black/8 hover:border-primary/30'
+                }`}
+              >
+                {w}
+              </button>
+            )
           })}
         </div>
-        <div className="flex items-center gap-2 mt-3">
-          <input className={`${inputClass} flex-1`} placeholder="Custom weight (e.g. 750g)" onKeyDown={(e) => { if (e.key === 'Enter' && e.target.value.trim()) { set('weights', [...(form.weights || []), e.target.value.trim()]); e.target.value = '' } }} />
-        </div>
+
+        <input
+          className={`${inputClass} mt-3`}
+          placeholder="Custom weight (e.g. 750g)"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              addVariant(e.target.value)
+              e.target.value = ''
+            }
+          }}
+        />
       </div>
-      {form.weights?.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {form.weights.map((w) => (
-            <span key={w} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 text-primary text-xs font-bold">
-              {w} <button type="button" onClick={() => set('weights', form.weights.filter((x) => x !== w))} className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/40"><X className="w-2.5 h-2.5" /></button>
-            </span>
-          ))}
+
+      {form.variants?.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-sm font-bold text-dark">
+            Set Price for Each Variant
+          </h4>
+
+          {form.variants.map((variant, index) => {
+            const discount =
+              Number(variant.mrp) > Number(variant.price) &&
+              Number(variant.mrp) > 0
+                ? Math.round(
+                    ((Number(variant.mrp) - Number(variant.price)) /
+                      Number(variant.mrp)) *
+                      100
+                  )
+                : 0
+
+            return (
+              <div
+                key={`${variant.weight}-${index}`}
+                className="rounded-xl border border-black/8 p-4 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-primary">
+                    {variant.weight}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(index)}
+                    className="text-red-500 text-xs font-bold"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>
+                      Selling Price (₹) *
+                    </label>
+
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0"
+                      value={variant.price}
+                      onChange={(e) =>
+                        updateVariant(index, 'price', e.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>
+                      MRP (₹)
+                    </label>
+
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="0"
+                      value={variant.mrp}
+                      onChange={(e) =>
+                        updateVariant(index, 'mrp', e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+
+                {discount > 0 && (
+                  <div className="text-xs font-bold text-primary">
+                    {discount}% discount — You save ₹
+                    {Number(variant.mrp) - Number(variant.price)}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
+
+      <div>
+        <label className={labelClass}>Tax (%)</label>
+
+        <input
+          type="number"
+          className={inputClass}
+          placeholder="0"
+          value={form.tax}
+          onChange={(e) => set('tax', e.target.value)}
+        />
+      </div>
     </div>
   )
 }
@@ -234,10 +376,18 @@ const buildInitialForm = (existing) => ({
   category: existing?.category || '',
   subcategory: '',
   tags: existing?.tags?.join(', ') || '',
-  price: existing?.sellingPrice || '',
-  mrp: existing?.mrp || '',
   tax: existing?.tax || '',
-  weights: existing?.weightOptions || [],
+variants: existing?.variants?.length
+  ? existing.variants.map((variant) => ({
+      weight: variant.weight || '',
+      price: variant.price ?? '',
+      mrp: variant.originalPrice ?? '',
+    }))
+  : (existing?.weightOptions || []).map((weight) => ({
+      weight,
+      price: existing?.sellingPrice || existing?.price || '',
+      mrp: existing?.mrp || existing?.originalPrice || '',
+    })),
   stock: existing?.stock ?? '',
   minStock: existing?.minStock || '',
   sku: existing?.sku || '',
@@ -278,7 +428,14 @@ export default function ProductFormPage() {
 
   const canNext = () => {
     if (step === 1) return form.name && form.description && form.category
-    if (step === 2) return form.price && form.weights?.length > 0
+    if (step === 2) {
+      return (
+        form.variants?.length > 0 &&
+        form.variants.every(
+          (variant) => variant.weight && Number(variant.price) > 0
+        )
+      )
+    }
     if (step === 3) return form.stock !== ''
     return true
   }
@@ -296,11 +453,17 @@ export default function ProductFormPage() {
         categoryName: cat?.name,
         slug: existing?.slug || slugify(form.name),
         tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
-        sellingPrice: Number(form.price) || 0,
-        mrp: Number(form.mrp) || 0,
-        tax: Number(form.tax) || 0,
-        weightOptions: form.weights,
-        stock: Number(form.stock) || 0,
+        price: Number(form.variants?.[0]?.price) || 0,
+originalPrice: Number(form.variants?.[0]?.mrp) || 0,
+variants: (form.variants || []).map((variant) => ({
+  weight: variant.weight,
+  price: Number(variant.price) || 0,
+  originalPrice: Number(variant.mrp) || 0,
+  stock: Number(form.stock) || 0,
+})),
+tax: Number(form.tax) || 0,
+weightOptions: (form.variants || []).map((variant) => variant.weight),
+stock: Number(form.stock) || 0,
         minStock: Number(form.minStock) || 10,
         sku: form.sku,
         barcode: form.barcode,

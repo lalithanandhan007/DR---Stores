@@ -85,7 +85,9 @@ function HeartParticles({ show }) {
    PREMIUM PRODUCT CARD
    ========================================== */
 export default function ProductCard({ product, index = 0 }) {
-  const [selectedWeight, setSelectedWeight] = useState(product.weightOptions?.[0] || '')
+  const [selectedWeight, setSelectedWeight] = useState(
+    product.variants?.[0]?.weight || product.weightOptions?.[0] || ''
+  )
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const [hovered, setHovered] = useState(false)
@@ -97,9 +99,17 @@ export default function ProductCard({ product, index = 0 }) {
   const liked = isWishlisted(product.id)
   const spotlight = useSpotlight()
 
-  const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0
+  const selectedVariant =
+  product.variants?.find((variant) => variant.weight === selectedWeight) || null
+
+const currentPrice = selectedVariant?.price ?? product.price
+
+const currentOriginalPrice =
+  selectedVariant?.originalPrice ?? product.originalPrice
+
+const discount = currentOriginalPrice
+  ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
+  : 0
 
   const handleAdd = (e) => {
     e.preventDefault()
@@ -146,17 +156,18 @@ export default function ProductCard({ product, index = 0 }) {
       style={{ perspective: 800 }}
     >
       <Link to={`/vegetables/${product.id}`} className="block">
-        <motion.div
-          whileHover={{ y: -10 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-          style={{ rotateX: hovered ? tiltY : 0, rotateY: hovered ? tiltX : 0 }}
-          className="relative rounded-[1.5rem] bg-white overflow-hidden transition-shadow duration-500"
-          style={{
-            boxShadow: hovered
-              ? `0 25px 60px -12px ${product.gradient[0]}25, 0 8px 24px -8px rgba(0,0,0,0.08)`
-              : '0 4px 24px -4px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)',
-          }}
-        >
+      <motion.div
+  whileHover={{ y: -10 }}
+  transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+  className="relative rounded-[1.5rem] bg-white overflow-hidden transition-shadow duration-500"
+  style={{
+    rotateX: hovered ? tiltY : 0,
+    rotateY: hovered ? tiltX : 0,
+    boxShadow: hovered
+      ? `0 25px 60px -12px ${product.gradient[0]}25, 0 8px 24px -8px rgba(0,0,0,0.08)`
+      : '0 4px 24px -4px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)',
+  }}
+>
           {/* Animated border glow */}
           <motion.div
             animate={hovered ? { opacity: 1 } : { opacity: 0 }}
@@ -275,18 +286,18 @@ export default function ProductCard({ product, index = 0 }) {
             {/* Price row — dominant */}
             <div className="mt-4 flex items-end gap-2.5">
               <span className="text-[1.65rem] font-black text-dark leading-none tracking-tight">
-                ₹{product.price}
+              ₹{currentPrice}
               </span>
               <span className="text-[11px] text-dark/35 font-medium mb-0.5">/{product.unit}</span>
-              {product.originalPrice && (
+              {currentOriginalPrice && (
                 <>
-                  <span className="text-sm text-dark/28 line-through mb-0.5">₹{product.originalPrice}</span>
+                  <span className="text-sm text-dark/28 line-through mb-0.5">₹{currentOriginalPrice}</span>
                   <motion.span
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
                     className="text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/50 px-2 py-0.5 rounded-full mb-0.5"
                   >
-                    Save ₹{product.originalPrice - product.price}
+                    Save ₹{currentOriginalPrice - currentPrice}
                   </motion.span>
                 </>
               )}

@@ -83,6 +83,12 @@ export function ProductsProvider({ children }) {
       id: undefined,
       price: data.price ?? data.sellingPrice,
       originalPrice: data.originalPrice ?? data.mrp,
+      variants: (data.variants || []).map((variant) => ({
+        weight: variant.weight,
+        price: Number(variant.price) || 0,
+        originalPrice: Number(variant.originalPrice ?? variant.mrp) || 0,
+        stock: Number(variant.stock) || 0,
+      })),
       category: data.categoryId || data.category,
       categoryName: data.categoryName,
     }
