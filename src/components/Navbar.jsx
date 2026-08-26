@@ -10,7 +10,6 @@ import AccountMenu from './account/AccountMenu'
 const links = [
   { label: 'Home', to: '/' },
   { label: 'Vegetables', to: '/vegetables' },
-  { label: 'Groceries', to: '/', badge: 'Coming Soon' },
   { label: 'About', to: '/#why-us' },
   { label: 'Contact', to: '/#contact' },
 ]
@@ -94,11 +93,15 @@ export default function Navbar() {
 
   const handleNav = (link) => {
     setOpen(false)
+  
     if (link.to.startsWith('/#')) {
+      const id = link.to.replace('/', '')
+  
       if (location.pathname !== '/') {
-        navigate(link.to)
+        navigate('/')
+        setTimeout(() => scrollToId(id), 100)
       } else {
-        scrollToId(link.to)
+        scrollToId(id)
       }
     }
   }

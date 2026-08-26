@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, X, ArrowRight, Leaf, SlidersHorizontal, Grid3X3, List, Search, Sparkles } from 'lucide-react'
 import { useProducts } from '../context/ProductsContext'
@@ -38,9 +38,20 @@ function FloatingLeaf({ style, delay = 0 }) {
 
 export default function VegetablesPage() {
   const { products, loading, error } = useProducts()
+  const [searchParams] = useSearchParams()
   const [filters, setFilters] = useState(defaultFilters)
   const [viewMode, setViewMode] = useState('grid')
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  useEffect(() => {
+    const category = searchParams.get('category')
+  
+    if (category) {
+      setFilters((prev) => ({
+        ...prev,
+        category,
+      }))
+    }
+  }, [searchParams])
 
   const filtered = useMemo(() => {
     let list = [...products]

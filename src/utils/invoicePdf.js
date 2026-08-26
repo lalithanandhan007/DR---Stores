@@ -202,31 +202,46 @@ export function downloadOrderInvoice(order) {
   doc.text(inr(order.grandTotal), rightX - 3, ty + 1, { align: 'right' })
 
   /* ---------- Payment + delivery ---------- */
-  let py = ty + 14
+const sectionY = ty + 14
+let py = sectionY
+
+// PAYMENT
+doc.setFont('helvetica', 'bold')
+doc.setFontSize(9)
+doc.setTextColor(...BRAND_GREEN)
+doc.text('PAYMENT', M, sectionY)
+
+doc.setFontSize(8.5)
+doc.setFont('helvetica', 'normal')
+doc.setTextColor(...INK)
+
+py += 4.5
+doc.text(`Method: ${PAYMENT_METHODS[payment.method] || payment.method || 'â€”'}`, M, py)
+
+py += 4.5
+doc.text(`Status: ${PAYMENT_LABELS[payment.status] || payment.status || 'â€”'}`, M, py)
+
+py += 4.5
+const txId = payment.transactionId || payment.razorpayPaymentId
+if (txId) {
+  doc.text(`Transaction ID: ${txId}`, M, py)
+}
+
+// DELIVERY — always starts at the same Y position as PAYMENT
+if (slot?.label) {
+  const deliveryX = pageW / 2 + 6
+
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
   doc.setTextColor(...BRAND_GREEN)
-  doc.text('PAYMENT', M, py)
-  doc.setFontSize(8.5)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...INK)
-  py += 4.5
-  doc.text(`Method: ${PAYMENT_METHODS[payment.method] || payment.method || '—'}`, M, py)
-  py += 4.5
-  doc.text(`Status: ${PAYMENT_LABELS[payment.status] || payment.status || '—'}`, M, py)
-  py += 4.5
-  const txId = payment.transactionId || payment.razorpayPaymentId
-  if (txId) { doc.text(`Transaction ID: ${txId}`, M, py); py += 4.5 }
+  doc.text('DELIVERY', deliveryX, sectionY)
 
-  if (slot?.label) {
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(...BRAND_GREEN)
-    doc.text('DELIVERY', pageW / 2 + 6, py)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(...INK)
-    doc.text(`${slot.label} — ${slot.time || ''}`, pageW / 2 + 6, py + 4.5)
-    doc.text(`Slot: ${slot.label}`, pageW / 2 + 6, py + 9)
-  }
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8.5)
+  doc.setTextColor(...INK)
+  doc.text(`${slot.label} - ${slot.time || ''}`, deliveryX, sectionY + 4.5)
+  doc.text(`Slot: ${slot.label}`, deliveryX, sectionY + 9)
+}
 
   /* ---------- Footer note ---------- */
   const fx = pageH - 26

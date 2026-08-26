@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Truck, Sparkles, Star, Clock3, MapPin } from 'lucide-react'
 import { Magnetic, scrollToId } from './ui'
+import { useNavigate } from 'react-router-dom'
 import { Tomato, Carrot, Capsicum, Broccoli, Onion, Leaf, LeafBig, SpinachLeaf } from './vegetables'
 
 const ease = [0.22, 1, 0.36, 1]
@@ -34,6 +35,7 @@ function Particle({ className, delay = 0 }) {
 }
 
 export default function Hero() {
+  const navigate = useNavigate()
   return (
     <section id="home" className="relative min-h-screen overflow-hidden flex items-center pt-28 pb-16">
       {/* Ambient background */}
@@ -91,7 +93,7 @@ export default function Hero() {
           >
             <Magnetic strength={0.25}>
               <button
-                onClick={() => scrollToId('#categories')}
+                onClick={() => navigate('/vegetables')}
                 className="group inline-flex items-center gap-2.5 text-base font-bold text-white bg-gradient-to-r from-primary to-primary-dark px-8 py-4 rounded-full shadow-cta hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300"
               >
                 Shop Vegetables
@@ -104,7 +106,7 @@ export default function Hero() {
                 className="inline-flex items-center gap-2.5 text-base font-semibold text-dark/80 hover:text-primary bg-white/70 backdrop-blur border border-black/8 px-7 py-4 rounded-full hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5"
               >
                 <Sparkles className="w-5 h-5 text-accent" />
-                Browse Grocery
+                Browse Categories
               </button>
             </Magnetic>
           </motion.div>

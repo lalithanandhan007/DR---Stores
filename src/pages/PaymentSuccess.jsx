@@ -271,9 +271,9 @@ export default function PaymentSuccess() {
           <Link to="/" className="flex-1 h-13 rounded-2xl border-2 border-black/10 text-sm font-bold text-dark/70 flex items-center justify-center gap-2 hover:border-dark/25 transition-all">
             <Home className="w-4 h-4" /> Continue Shopping
           </Link>
-          <Link to="/vegetables" className="flex-1 h-13 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-            <ShoppingBag className="w-4 h-4" /> Track Order
-          </Link>
+          <Link to="/orders" className="flex-1 h-13 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all">
+  <ShoppingBag className="w-4 h-4" /> Track Order
+</Link>
         </motion.div>
       </div>
       <div className="mt-16"><Footer /></div>

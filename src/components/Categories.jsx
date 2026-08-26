@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion'
 import { ArrowUpRight, Leaf, Salad, ShoppingBasket, CookingPot } from 'lucide-react'
-import { SectionHeader, Stagger, StaggerItem, Magnetic, scrollToId } from './ui'
+import { SectionHeader, Stagger, StaggerItem, Magnetic } from './ui'
+import { useNavigate } from 'react-router-dom'
 import { SpinachLeaf, Carrot, Tomato, Onion } from './vegetables'
 
 const categories = [
   {
-    title: 'Leafy Vegetables',
+      title: 'Leafy Vegetables',
+      category: 'Leafy & Flowering',
     count: '24+ varieties',
     desc: 'Spinach, coriander, methi & more — plucked at sunrise, in your kitchen by sunset.',
     icon: Leaf,
@@ -16,6 +18,7 @@ const categories = [
   },
   {
     title: 'Root Vegetables',
+    category: 'Root Vegetables',
     count: '18+ varieties',
     desc: 'Carrots, beets, potatoes & yams — earth-fresh and grown for real flavour.',
     icon: Salad,
@@ -26,6 +29,7 @@ const categories = [
   },
   {
     title: 'Daily Grocery',
+    category: 'Daily Grocery',
     count: '200+ items',
     desc: 'Dals, rice, oils, spices and pantry staples your kitchen runs on, every single day.',
     icon: ShoppingBasket,
@@ -36,6 +40,7 @@ const categories = [
   },
   {
     title: 'Cooking Essentials',
+    category: 'Cooking Essentials',
     count: '50+ items',
     desc: 'Fresh eggs, curd, paneer, dairy & daily essentials — the little things that matter.',
     icon: CookingPot,
@@ -47,6 +52,7 @@ const categories = [
 ]
 
 export default function Categories() {
+  const navigate = useNavigate()
   return (
     <section id="categories" className="relative section-padding overflow-hidden bg-white">
       <div className="ambient-orb w-[420px] h-[420px] -left-48 top-1/3 orange-blob" />
@@ -64,7 +70,7 @@ export default function Categories() {
               <motion.button
                 whileHover={{ y: -10 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                onClick={() => scrollToId('#contact')}
+                onClick={() => navigate(`/vegetables?category=${encodeURIComponent(c.category)}`)}
                 className="group relative w-full text-left rounded-3xl border border-black/5 overflow-hidden bg-cream p-6 shadow-soft hover:shadow-lift transition-shadow duration-500"
               >
                 {/* art backdrop */}
