@@ -1,6 +1,10 @@
-import { motion } from 'framer-motion'
-import { Bike, Clock3, MapPin, PackageCheck } from 'lucide-react'
-import { Reveal, Stagger, StaggerItem, Magnetic, scrollToId } from './ui'
+import { useState } from 'react'
+import L from 'leaflet'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Bike, Clock3, MapPin, PackageCheck, X, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Reveal, Stagger, StaggerItem, Magnetic } from './ui'
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
 
 function Scooter() {
   return (
@@ -69,17 +73,84 @@ function Scooter() {
     </svg>
   )
 }
+function LocationPicker({ onSelect, selectedLocation }) {
+  useMapEvents({
+    click(e) {
+      onSelect({
+        latitude: e.latlng.lat,
+        longitude: e.latlng.lng,
+      })
+    },
+  })
+
+  return selectedLocation ? (
+    <Marker
+      position={[
+        selectedLocation.latitude,
+        selectedLocation.longitude,
+      ]}
+    />
+  ) : null
+}
+
 
 const stats = [
-  { icon: MapPin, label: 'Delivery Radius', value: '5 KM', color: 'text-primary bg-primary/10' },
+  { icon: MapPin, label: 'Delivery Radius', value: '10 KM', color: 'text-primary bg-primary/10' },
   { icon: Clock3, label: 'Average Delivery', value: '40 Min', color: 'text-accent bg-accent/10' },
   { icon: PackageCheck, label: 'Orders Delivered', value: '10K+', color: 'text-secondary bg-secondary/10' },
   { icon: Bike, label: 'Own Fleet', value: '24/7', color: 'text-primary-dark bg-primary/10' },
 ]
 
 export default function DeliveryBanner() {
+  const [deliveryOpen, setDeliveryOpen] = useState(false)
+  const [selectedLocation, setSelectedLocation] = useState(null)
+  const [result, setResult] = useState(null)
+
+
+  const checkDelivery = () => {
+    if (!selectedLocation) {
+      setResult('select-location')
+      return
+    }
+  
+    const storeLatitude = 12.8505582
+    const storeLongitude = 80.1405411
+  
+    const customerLatitude = selectedLocation.latitude
+    const customerLongitude = selectedLocation.longitude
+  
+    const R = 6371
+  
+    const dLat = ((customerLatitude - storeLatitude) * Math.PI) / 180
+    const dLon = ((customerLongitude - storeLongitude) * Math.PI) / 180
+  
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((storeLatitude * Math.PI) / 180) *
+        Math.cos((customerLatitude * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2)
+  
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  
+    const distance = R * c
+  
+    if (distance <= 10) {
+      setResult({
+        status: 'available',
+        distance: distance.toFixed(1),
+      })
+    } else {
+      setResult({
+        status: 'unavailable',
+        distance: distance.toFixed(1),
+      })
+    }
+  }
+
   return (
-    <section className="relative section-padding overflow-hidden">
+    <>
+      <section className="relative section-padding overflow-hidden">
       <div className="ambient-orb w-[460px] h-[460px] -right-52 top-0 green-blob" />
 
       <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 relative">
@@ -129,8 +200,12 @@ export default function DeliveryBanner() {
 
               <Reveal delay={0.35} className="mt-8">
                 <Magnetic strength={0.25}>
-                  <button
-                    onClick={() => scrollToId('#contact')}
+                <button 
+                  onClick={() => {
+                      setDeliveryOpen(true)
+                      setResult(null)
+                      setSelectedLocation(null)
+                  }}
                     className="inline-flex items-center gap-2.5 text-base font-bold text-primary-dark bg-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
                   >
                     <MapPin className="w-5 h-5" />
@@ -167,6 +242,104 @@ export default function DeliveryBanner() {
           </div>
         </div>
       </div>
-    </section>
-  )
+      </section>
+
+<AnimatePresence>
+  {deliveryOpen && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={() => setDeliveryOpen(false)}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2 }}
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+      >
+        <button
+          onClick={() => setDeliveryOpen(false)}
+          className="absolute right-4 top-4 p-2 rounded-full hover:bg-black/5"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <MapPin className="w-7 h-7" />
+          </div>
+
+          <h3 className="text-xl font-bold text-dark">
+            Check Delivery Availability
+          </h3>
+
+          <p className="mt-2 text-sm text-dark/60">
+          Select your location on the map to check whether we deliver to your area.
+          </p>
+        </div>
+
+        <div className="mt-6 h-[300px] overflow-hidden rounded-2xl border border-black/10">
+        <MapContainer
+  center={[12.8505582, 80.1405411]}
+  zoom={15}
+  className="h-full w-full z-0"
+>
+  <TileLayer
+    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    attribution="© OpenStreetMap contributors"
+  />
+
+<LocationPicker
+  selectedLocation={selectedLocation}
+  onSelect={(location) => {
+    setSelectedLocation(location)
+    setResult(null)
+  }}
+/>
+
+      </MapContainer>
+      </div>
+
+<p className="mt-3 text-center text-xs text-dark/50">
+  Click anywhere on the map to select your delivery location.
+</p>
+
+<button
+  onClick={checkDelivery}
+  className="mt-4 w-full rounded-xl bg-primary py-3 text-sm font-bold text-white hover:bg-primary-dark transition-colors"
+>
+  Check Availability
+</button>
+
+{result === 'select-location' && (
+  <div className="mt-4 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-700">
+    <AlertCircle className="w-5 h-5 shrink-0" />
+    Please select your delivery location on the map first.
+  </div>
+)}
+
+{result?.status === 'available' && (
+  <div className="mt-4 flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 p-3 text-sm text-green-700">
+    <CheckCircle2 className="w-5 h-5 shrink-0" />
+    Great! We deliver to this location. It is {result.distance} KM from our store.
+  </div>
+)}
+
+{result?.status === 'unavailable' && (
+  <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+    <AlertCircle className="w-5 h-5 shrink-0" />
+    Sorry, this location is {result.distance} KM from our store, which is outside our 10 KM delivery radius.
+  </div>
+)}
+      </motion.div>
+    </motion.div>
+  )}
+    </AnimatePresence>
+  </>
+)
 }
+

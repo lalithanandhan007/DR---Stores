@@ -167,6 +167,53 @@ export default function SettingsPage() {
             <input className={inputCls} value={settings.address.country} onChange={(e) => set('address', { ...settings.address, country: e.target.value })} placeholder="Country" />
           </div>
         </div>
+
+        <div className="mt-4">
+  <label className={labelCls}>Store Location</label>
+
+  <div className="grid sm:grid-cols-2 gap-3">
+    <div>
+      <label className="block text-xs text-dark/50 mb-1">
+        Latitude
+      </label>
+
+      <input
+        type="number"
+        step="any"
+        className={inputCls}
+        value={settings.storeLocation?.latitude ?? ''}
+        onChange={(e) =>
+          set('storeLocation', {
+            ...settings.storeLocation,
+            latitude: e.target.value === '' ? null : Number(e.target.value),
+          })
+        }
+        placeholder="Example: 11.0168"
+      />
+    </div>
+
+    <div>
+      <label className="block text-xs text-dark/50 mb-1">
+        Longitude
+      </label>
+
+      <input
+        type="number"
+        step="any"
+        className={inputCls}
+        value={settings.storeLocation?.longitude ?? ''}
+        onChange={(e) =>
+          set('storeLocation', {
+            ...settings.storeLocation,
+            longitude: e.target.value === '' ? null : Number(e.target.value),
+          })
+        }
+        placeholder="Example: 76.9558"
+      />
+    </div>
+  </div>
+</div>
+
         <div className="mt-4">
           <label className={labelCls}>Store Logo</label>
           <div className="flex items-center gap-4">

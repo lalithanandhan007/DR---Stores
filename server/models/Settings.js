@@ -70,6 +70,17 @@ const settingsSchema = new mongoose.Schema(
       },
     },
 
+    storeLocation: {
+      latitude: {
+        type: Number,
+        default: null,
+      },
+      longitude: {
+        type: Number,
+        default: null,
+      },
+    },
+
     /* =========================================================
        BUSINESS HOURS
        ========================================================= */
