@@ -63,6 +63,13 @@ export function AdminDataProvider({ children }) {
 
   useEffect(() => { load() }, [load])
 
+  const refreshNotifications = useCallback(() => {
+    notificationApi
+      .list()
+      .then((list) => setNotifications(list || []))
+      .catch(() => setError('Could not load notifications'))
+  }, [])
+
   const statCards = useMemo(() => {
     if (!stats) return BASE_STATCARDS
     const map = {
@@ -125,10 +132,11 @@ export function AdminDataProvider({ children }) {
     weeklyRevenue, monthlyRevenue, ordersTrend, categoryDistribution,
     topProducts, lowStock, activity, notifications, analytics, recentOrders,
     refresh: load,
+    refreshNotifications,
   }), [
     loading, error, statCards, stats, adminProfile, storeStatus, storeSettings, weeklyRevenue, monthlyRevenue,
     ordersTrend, categoryDistribution, topProducts, lowStock, activity,
-    notifications, analytics, recentOrders, load,
+    notifications, analytics, recentOrders, load, refreshNotifications,
   ])
 
   return <AdminDataCtx.Provider value={value}>{children}</AdminDataCtx.Provider>
