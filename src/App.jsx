@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Leaf } from 'lucide-react'
 import { CartProvider, ToastProvider, RecentProvider } from './context/CartContext'
-import { AuthProvider, WishlistProvider, SettingsProvider } from './context/AuthContext'
+import { AuthProvider, WishlistProvider, SettingsProvider, useSettings } from './context/AuthContext'
 import { ProductsProvider } from './context/ProductsContext'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -93,11 +93,19 @@ function AdminLoader() {
 
 /* Hide the customer Navbar + CartPreview on admin routes — the admin
    layout provides its own Topbar/Sidebar shell. */
-function AppShell() {
-  const { pathname } = useLocation()
-  const isAdmin = pathname.startsWith('/admin')
+   function AppShell() {
+    const { pathname } = useLocation()
+    const { settings } = useSettings()
+    const isAdmin = pathname.startsWith('/admin')
   return (
-    <div className={`grain min-h-screen ${isAdmin ? 'bg-[#F5F7F5]' : 'bg-cream'} text-dark selection:bg-primary/20`}>
+    <div
+  className={`grain min-h-screen ${
+    settings.darkMode
+      ? 'dark bg-[#111111] text-white'
+      : isAdmin
+        ? 'bg-[#F5F7F5] text-dark'
+        : 'bg-cream text-dark'
+  } selection:bg-primary/20`} >
       <ScrollToTop />
       {!isAdmin && <Navbar />}
       <Routes>

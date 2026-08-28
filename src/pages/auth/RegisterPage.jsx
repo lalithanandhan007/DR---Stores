@@ -20,6 +20,8 @@ export default function RegisterPage() {
   const [accepted, setAccepted] = useState(false)
   const [errors, setErrors] = useState({})
   const [busy, setBusy] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
 
   const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setErrors((s) => ({ ...s, [k]: null })) }
 
@@ -129,19 +131,39 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <label className="flex items-start gap-2.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={accepted}
-              onChange={(e) => { setAccepted(e.target.checked); setErrors((s) => ({ ...s, terms: null })) }}
-              className="w-4 h-4 mt-0.5 rounded accent-[#2E7D32]"
-            />
-            <span className="text-xs text-dark/55 leading-relaxed">
-              I agree to the{' '}
-              <span className="font-semibold text-primary cursor-pointer">Terms & Conditions</span> and{' '}
-              <span className="font-semibold text-primary cursor-pointer">Privacy Policy</span>
-            </span>
-          </label>
+<div className="flex items-start gap-2.5 select-none">
+  <input
+    type="checkbox"
+    checked={accepted}
+    onChange={(e) => {
+      setAccepted(e.target.checked)
+      setErrors((s) => ({ ...s, terms: null }))
+    }}
+    className="w-4 h-4 mt-0.5 rounded accent-[#2E7D32] cursor-pointer"
+  />
+
+  <span className="text-xs text-dark/55 leading-relaxed">
+    I agree to the{' '}
+
+    <button
+      type="button"
+      onClick={() => setShowTerms(true)}
+      className="font-semibold text-primary hover:text-primary-dark transition-colors"
+    >
+      Terms & Conditions
+    </button>
+
+    {' '}and{' '}
+
+    <button
+      type="button"
+      onClick={() => setShowPrivacy(true)}
+      className="font-semibold text-primary hover:text-primary-dark transition-colors"
+    >
+      Privacy Policy
+    </button>
+  </span>
+</div>
           {errors.terms && <p className="text-[11px] font-medium text-red-500 -mt-2">{errors.terms}</p>}
 
           <LoadingButton loading={busy} loadingText="Creating account…" onClick={handleSubmit}>
@@ -150,10 +172,178 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6 text-center text-sm text-dark/45">
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mt-6 text-center text-sm text-dark/45"
+      >
         Already have an account?{' '}
-        <Link to="/login" className="font-bold text-primary hover:text-primary-dark transition-colors">Sign in</Link>
+        <Link
+          to="/login"
+          className="font-bold text-primary hover:text-primary-dark transition-colors"
+        >
+          Sign in
+        </Link>
       </motion.p>
+
+      {showTerms && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setShowTerms(false)}
+        >
+          <div
+            className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-3xl bg-white p-6 sm:p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-2xl font-bold text-dark">
+                Terms & Conditions
+              </h2>
+
+              <button
+                type="button"
+                onClick={() => setShowTerms(false)}
+                className="text-2xl text-dark/50 hover:text-dark"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm leading-relaxed text-dark/65">
+              <p>
+                Welcome to D.R Stores. By creating an account and using our
+                services, you agree to these Terms & Conditions.
+              </p>
+
+              <div>
+                <h3 className="font-bold text-dark mb-1">1. Account Usage</h3>
+                <p>
+                  You are responsible for providing accurate information and
+                  keeping your account details secure.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-dark mb-1">2. Orders & Delivery</h3>
+                <p>
+                  Orders are subject to product availability and delivery
+                  availability in your selected location.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-dark mb-1">3. Payments</h3>
+                <p>
+                  All applicable charges must be paid using the available
+                  payment methods during checkout.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-dark mb-1">4. Changes</h3>
+                <p>
+                  D.R Stores may update these Terms & Conditions when required.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowTerms(false)}
+              className="mt-6 w-full rounded-xl bg-primary py-3 font-bold text-white hover:bg-primary-dark transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showPrivacy && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setShowPrivacy(false)}
+        >
+          <div
+            className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-3xl bg-white p-6 sm:p-8 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-2xl font-bold text-dark">
+                Privacy Policy
+              </h2>
+
+              <button
+                type="button"
+                onClick={() => setShowPrivacy(false)}
+                className="text-2xl text-dark/50 hover:text-dark"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm leading-relaxed text-dark/65">
+              <p>
+                At D.R Stores, we respect your privacy and take reasonable
+                measures to protect your personal information.
+              </p>
+
+              <div>
+                <h3 className="font-bold text-dark mb-1">
+                  Information We Collect
+                </h3>
+
+                <p>
+                  We may collect your name, email address, phone number,
+                  delivery address and order information.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-dark mb-1">
+                  How We Use Your Information
+                </h3>
+
+                <p>
+                  Your information is used to manage your account, process
+                  orders, provide deliveries and improve our services.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-dark mb-1">
+                  Data Protection
+                </h3>
+
+                <p>
+                  We take appropriate steps to protect your personal
+                  information from unauthorized access or misuse.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-dark mb-1">
+                  Contact
+                </h3>
+
+                <p>
+                  If you have questions about your privacy, please contact
+                  D.R Stores.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowPrivacy(false)}
+              className="mt-6 w-full rounded-xl bg-primary py-3 font-bold text-white hover:bg-primary-dark transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
     </AuthShell>
   )
 }

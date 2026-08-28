@@ -96,10 +96,9 @@ export default function SettingsPage() {
 
         {/* Appearance */}
         <Section title="Appearance">
-          <Row icon={Moon} tint="bg-indigo-50 text-indigo-500" title="Dark Mode" desc="Coming soon — we're working on it" right={
+          <Row icon={Moon} tint="bg-indigo-50 text-indigo-500" title="Dark Mode" right={
             <span className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wide text-accent bg-accent/10 px-2 py-1 rounded-full">Soon</span>
-              <Toggle checked={settings.darkMode} onChange={(v) => updateSettings({ darkMode: v })} disabled />
+              <Toggle checked={settings.darkMode} onChange={(v) => updateSettings({ darkMode: v })} />
             </span>
           } />
         </Section>
@@ -108,16 +107,25 @@ export default function SettingsPage() {
         <Section title="Preferences">
           <Row icon={Globe2} tint="bg-blue-50 text-blue-500" title="Language" desc="Choose your preferred language" right={
             <div className="flex items-center gap-1.5">
-              {['en', 'hi', 'ta'].map((lang) => (
+              {['en','ta'].map((lang) => (
                 <button
-                  key={lang}
-                  onClick={() => { updateSettings({ language: lang }); addToast(`Language set to ${lang.toUpperCase()}`, 'success', 2500) }}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
-                    settings.language === lang ? 'bg-primary text-white border-primary' : 'bg-cream text-dark/50 border-black/8 hover:border-primary/30'
-                  }`}
-                >
-                  {lang.toUpperCase()}
-                </button>
+                key={lang}
+                onClick={() => {
+                  updateSettings({ language: lang })
+                  addToast(
+                    `Language set to ${lang === 'en' ? 'English' : 'Tamil'}`,
+                    'success',
+                    2500
+                  )
+                }}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
+                  settings.language === lang
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-cream text-dark/50 border-black/8 hover:border-primary'
+                }`}
+              >
+                {lang.toUpperCase()}
+              </button>
               ))}
             </div>
           } />

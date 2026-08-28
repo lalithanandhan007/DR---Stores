@@ -294,3 +294,133 @@ html.lenis body {
     animation: none;
   }
 }
+
+/* ---------- Dark Mode ---------- */
+
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background: #111111;
+  color: #f5f5f5;
+}
+
+.dark .bg-cream {
+  background-color: #181818 !important;
+}
+
+.dark .bg-white {
+  background-color: #202020 !important;
+}
+
+.dark .text-dark {
+  color: #f5f5f5 !important;
+}
+
+.dark .text-dark\/70 {
+  color: rgba(245, 245, 245, 0.7) !important;
+}
+
+.dark .text-dark\/60 {
+  color: rgba(245, 245, 245, 0.6) !important;
+}
+
+.dark .text-dark\/50 {
+  color: rgba(245, 245, 245, 0.5) !important;
+}
+
+.dark .text-dark\/45 {
+  color: rgba(245, 245, 245, 0.45) !important;
+}
+
+.dark .text-dark\/40 {
+  color: rgba(245, 245, 245, 0.4) !important;
+}
+
+.dark .text-dark\/35 {
+  color: rgba(245, 245, 245, 0.35) !important;
+}
+
+.dark .text-dark\/30 {
+  color: rgba(245, 245, 245, 0.3) !important;
+}
+
+.dark .glass {
+  background: rgba(30, 30, 30, 0.78) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .glass-card {
+  background: rgba(30, 30, 30, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #202020 !important;
+  color: #f5f5f5 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.dark .border-black\/5,
+.dark .border-black\/8,
+.dark .border-black\/10,
+.dark .border-black\/15 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ---------- Dark Mode - Visibility Fixes ---------- */
+
+.dark [class*="text-dark/"] {
+  color: rgba(245, 245, 245, 0.65) !important;
+}
+
+.dark [class*="text-gray-"] {
+  color: rgba(245, 245, 245, 0.65) !important;
+}
+
+.dark [class*="text-black/"] {
+  color: rgba(245, 245, 245, 0.65) !important;
+}
+
+/* Form controls and selectable options */
+.dark input[type="checkbox"] {
+  accent-color: #2E7D32;
+}
+
+.dark label {
+  color: rgba(245, 245, 245, 0.75);
+}
+
+/* ---------- Dark Mode - Admin ---------- */
+
+.dark .bg-\[\#F5F7F5\] {
+  background-color: #111111 !important;
+}
+
+.dark .bg-\[\#F5F7F5\]\/50 {
+  background-color: #151515 !important;
+}
+
+.dark .bg-white {
+  background-color: #202020 !important;
+}
+
+.dark .bg-white\/50 {
+  background-color: rgba(32, 32, 32, 0.5) !important;
+}
+
+.dark .bg-white\/70 {
+  background-color: rgba(32, 32, 32, 0.7) !important;
+}
+
+.dark .bg-white\/80 {
+  background-color: rgba(32, 32, 32, 0.8) !important;
+}

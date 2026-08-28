@@ -313,21 +313,57 @@ const SettingsCtx = createContext(null)
 
 export function SettingsProvider({ children }) {
   const { isAuthenticated, user } = useAuth()
-  const [settings, setSettings] = useState({
-    notifications: { orders: true, offers: true, email: false },
-    darkMode: false,
-    language: 'en',
+  const [settings, setSettings] = useState(() => {
+    const savedSettings = localStorage.getItem('drstores_settings')
+  
+    if (savedSettings) {
+      try {
+        return JSON.parse(savedSettings)
+      } catch {
+        // Ignore invalid saved settings
+      }
+    }
+  
+    return {
+      notifications: { orders: true, offers: true, email: false },
+      darkMode: false,
+      language: 'en',
+    }
   })
 
   /* Load settings from user profile when the user object changes */
   useEffect(() => {
+    const savedSettings = localStorage.getItem('drstores_settings')
+  
+    if (savedSettings) {
+      try {
+        setSettings(JSON.parse(savedSettings))
+        return
+      } catch {
+        // Ignore invalid saved settings
+      }
+    }
+  
     if (user?.settings) {
-      setSettings((prev) => ({ ...prev, ...user.settings }))
+      setSettings((prev) => ({
+        ...prev,
+        ...user.settings,
+      }))
     }
   }, [user?.settings])
 
   const updateSettings = useCallback((patch) => {
-    setSettings((prev) => ({ ...prev, ...patch }))
+    setSettings((prev) => {
+      const updatedSettings = { ...prev, ...patch }
+  
+      localStorage.setItem(
+        'drstores_settings',
+        JSON.stringify(updatedSettings)
+      )
+  
+      return updatedSettings
+    })
+  
     /* persist to the user's settings in MongoDB when logged in */
     if (isAuthenticated) {
       authApi.updateProfile({ settings: patch }).catch(() => {})
