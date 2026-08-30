@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Package, AlertTriangle, TicketPercent, UserRound, CheckCheck, Bell, X } from 'lucide-react'
 import { useAdminData } from '../../context/AdminDataContext'
-import { notificationApi } from '../../api'
 import { timeAgo } from '../../utils/format'
 
 const TYPE_META = {
@@ -15,7 +14,8 @@ const TYPE_META = {
 export default function NotificationPanel({ notifications: notificationsProp }) {
   const {
     notifications: ctxNotifications,
-    refreshNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
   } = useAdminData()
   const notifications = notificationsProp ?? ctxNotifications
   const [items, setItems] = useState([])
@@ -29,24 +29,10 @@ export default function NotificationPanel({ notifications: notificationsProp }) 
   }, [notifications])
 
   const unreadCount = items.filter((n) => !n.read).length
-  const markAll = async () => {
-    try {
-      await notificationApi.markAllRead()
-      setItems((prev) => prev.map((n) => ({ ...n, read: true })))
-    } catch {
-      // Keep the current state if the API request fails
-    }
-  }
-  const markOne = async (id) => {
-    try {
-      await notificationApi.markRead(id)
-      setItems((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-      )
-    } catch {
-      // Keep the current state if the API request fails
-    }
-  }
+  const markAll = () => markAllNotificationsRead()
+
+  const markOne = (id) => markNotificationRead(id)
+
   const deleteOne = (id) => setItems((prev) => prev.filter((n) => n.id !== id))
 
   return (

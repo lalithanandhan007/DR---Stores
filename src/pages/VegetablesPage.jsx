@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronRight, X, ArrowRight, Leaf, SlidersHorizontal, Grid3X3, List, Search, Sparkles } from 'lucide-react'
 import { useProducts } from '../context/ProductsContext'
+import { useSettings } from '../context/AuthContext'
+import { getTranslation } from '../i18n'
 import ProductCard from '../components/shop/ProductCard'
 import Skeleton from '../components/ui/Skeleton'
 import FilterSidebar from '../components/shop/FilterSidebar'
@@ -38,6 +40,10 @@ function FloatingLeaf({ style, delay = 0 }) {
 
 export default function VegetablesPage() {
   const { products, loading, error } = useProducts()
+  const { settings } = useSettings()
+
+  const language = settings.language || 'en'
+  const t = (key) => getTranslation(language, key)
   const [searchParams] = useSearchParams()
   const [filters, setFilters] = useState(defaultFilters)
   const [viewMode, setViewMode] = useState('grid')
@@ -109,9 +115,13 @@ export default function VegetablesPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-2 text-sm text-dark/40 mb-6"
         >
-          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+          <Link to="/" className="hover:text-primary transition-colors">
+  {t('common.home')}
+</Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-dark/65 font-medium">Vegetables</span>
+          <span className="text-dark/65 font-medium">
+  {t('common.vegetables')}
+</span>
         </motion.nav>
 
         {/* Page header */}
@@ -123,7 +133,7 @@ export default function VegetablesPage() {
             className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-primary bg-primary/8 border border-primary/12 px-4 py-2 rounded-full mb-4"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Farm Fresh Collection
+            {t('shop.farmFreshCollection')}
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -131,7 +141,7 @@ export default function VegetablesPage() {
             transition={{ duration: 0.6, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
             className="font-serif-display text-4xl sm:text-5xl lg:text-[3.5rem] font-bold text-dark tracking-tight leading-[1.1]"
           >
-            Fresh <span className="text-gradient">Vegetables</span>
+            {t('shop.fresh')} <span className="text-gradient">{t('common.vegetables')}</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -139,7 +149,7 @@ export default function VegetablesPage() {
             transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="mt-4 text-dark/45 text-[15px] font-light max-w-lg leading-relaxed"
           >
-            Handpicked daily from trusted local farms. Each vegetable is selected for peak freshness, natural flavour, and premium quality.
+            {t('shop.description')}
           </motion.p>
         </div>
 
@@ -154,7 +164,7 @@ export default function VegetablesPage() {
                     onClick={() => setFilters(defaultFilters)}
                     className="mt-5 w-full h-10 rounded-xl bg-primary/8 text-primary text-sm font-semibold hover:bg-primary/15 transition-colors"
                   >
-                    Clear All ({activeFilterCount})
+                    {t('shop.clearAll')} ({activeFilterCount})
                   </button>
                 )}
               </div>
@@ -180,7 +190,7 @@ export default function VegetablesPage() {
                   className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white z-[55] shadow-2xl overflow-y-auto p-6 lg:hidden"
                 >
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-dark">Filters</h3>
+                  <h3 className="text-lg font-bold text-dark">{t('shop.filters')}</h3>
                     <button onClick={() => setMobileFiltersOpen(false)} className="w-9 h-9 rounded-full bg-black/5 flex items-center justify-center">
                       <X className="w-5 h-5 text-dark/50" />
                     </button>
@@ -190,7 +200,7 @@ export default function VegetablesPage() {
                     onClick={() => setMobileFiltersOpen(false)}
                     className="mt-4 w-full h-12 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-sm"
                   >
-                    Show {filtered.length} Results
+                    {t('shop.showResults')} {filtered.length}
                   </button>
                 </motion.div>
               </>
@@ -246,7 +256,7 @@ export default function VegetablesPage() {
                 </svg>
               </div>
 
-              <span className="text-sm text-dark/40 font-medium hidden sm:block ml-1">{filtered.length} products</span>
+              <span className="text-sm text-dark/40 font-medium hidden sm:block ml-1">{filtered.length} {t('shop.products')}</span>
 
               <div className="flex-1" />
 
@@ -266,7 +276,7 @@ export default function VegetablesPage() {
                 </button>
               </div>
 
-              <span className="text-sm text-dark/40 font-medium sm:hidden">{filtered.length} products</span>
+              <span className="text-sm text-dark/40 font-medium sm:hidden">{filtered.length} {t('shop.products')}</span>
             </div>
 
             {/* Active filter chips */}
@@ -279,8 +289,13 @@ export default function VegetablesPage() {
                 {filters.badges.map((b) => (
                   <Chip key={b} label={b.charAt(0).toUpperCase() + b.slice(1)} onRemove={() => setFilters((f) => ({ ...f, badges: f.badges.filter((x) => x !== b) }))} />
                 ))}
-                {filters.minRating > 0 && <Chip label={`${filters.minRating}+ stars`} onRemove={() => setFilters((f) => ({ ...f, minRating: 0 }))} />}
-                <button onClick={() => setFilters(defaultFilters)} className="text-xs font-semibold text-primary hover:text-primary-dark transition-colors">Clear all</button>
+                {filters.minRating > 0 && (
+  <Chip
+    label={`${filters.minRating}+ ${t('shop.stars')}`}
+    onRemove={() => setFilters((f) => ({ ...f, minRating: 0 }))}
+  />
+)}
+                <button onClick={() => setFilters(defaultFilters)} className="text-xs font-semibold text-primary hover:text-primary-dark transition-colors">{t('shop.clearAll')}</button>
               </div>
             )}
 
@@ -294,19 +309,19 @@ export default function VegetablesPage() {
             ) : error ? (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-24 text-center">
                 <span className="text-7xl mb-5 block">⚠️</span>
-                <h3 className="text-2xl font-bold text-dark/65">Could not load vegetables</h3>
+                <h3 className="text-2xl font-bold text-dark/65">{t('shop.loadError')}</h3>
                 <p className="text-sm text-dark/40 mt-2 max-w-sm">{error}</p>
                 <button onClick={() => setFilters(defaultFilters)} className="mt-6 inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold hover:shadow-cta transition-all">
-                  Clear Filters <ArrowRight className="w-4 h-4" />
+                {t('shop.clearFilters')} <ArrowRight className="w-4 h-4" />
                 </button>
               </motion.div>
             ) : filtered.length === 0 ? (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-24 text-center">
                 <span className="text-7xl mb-5 block">🥬</span>
-                <h3 className="text-2xl font-bold text-dark/65">No vegetables found</h3>
-                <p className="text-sm text-dark/40 mt-2 max-w-sm">Try adjusting your filters or search for something else.</p>
+                <h3 className="text-2xl font-bold text-dark/65">{t('shop.noVegetables')}</h3>
+                <p className="text-sm text-dark/40 mt-2 max-w-sm">{t('shop.adjustFilters')}</p>
                 <button onClick={() => setFilters(defaultFilters)} className="mt-6 inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold hover:shadow-cta transition-all">
-                  Clear Filters <ArrowRight className="w-4 h-4" />
+                {t('shop.clearFilters')} <ArrowRight className="w-4 h-4" />
                 </button>
               </motion.div>
             ) : (

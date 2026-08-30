@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import AccountLayout from '../../components/account/AccountLayout'
 import { useAuth, useSettings } from '../../context/AuthContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import { useToast } from '../../context/CartContext'
 
 function Toggle({ checked, onChange, disabled }) {
@@ -56,6 +57,7 @@ function Section({ children, title }) {
 
 export default function SettingsPage() {
   const { settings, updateSettings } = useSettings()
+  const { t } = useTranslation()
   const { logout } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
@@ -105,7 +107,12 @@ export default function SettingsPage() {
 
         {/* Language */}
         <Section title="Preferences">
-          <Row icon={Globe2} tint="bg-blue-50 text-blue-500" title="Language" desc="Choose your preferred language" right={
+        <Row
+  icon={Globe2}
+  tint="bg-blue-50 text-blue-500"
+  title={t('settings.language')}
+  desc={t('settings.chooseLanguage')}
+  right={
             <div className="flex items-center gap-1.5">
               {['en','ta'].map((lang) => (
                 <button

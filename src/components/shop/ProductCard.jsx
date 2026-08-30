@@ -159,7 +159,7 @@ const discount = currentOriginalPrice
       <motion.div
   whileHover={{ y: -10 }}
   transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-  className="relative rounded-[1.5rem] bg-white overflow-hidden transition-shadow duration-500"
+  className="relative rounded-[1.5rem] bg-white dark:bg-[#1c1c1c] overflow-hidden transition-shadow duration-500" 
   style={{
     rotateX: hovered ? tiltY : 0,
     rotateY: hovered ? tiltX : 0,
@@ -274,24 +274,24 @@ const discount = currentOriginalPrice
             </div>
 
             {/* Name — large, dominant */}
-            <h3 className="text-[17px] font-extrabold text-dark leading-snug tracking-tight group-hover:text-primary transition-colors duration-300">
+            <h3 className="text-[17px] font-extrabold text-dark dark:text-white leading-snug tracking-tight group-hover:text-primary transition-colors duration-300">
               {product.name}
             </h3>
 
             {/* Description — soft, small */}
-            <p className="mt-1.5 text-[12.5px] text-dark/42 leading-relaxed line-clamp-2 font-light">
+            <p className="mt-1.5 text-[12.5px] text-dark/42 dark:text-white/50 leading-relaxed line-clamp-2 font-light">
               {product.description}
             </p>
 
             {/* Price row — dominant */}
             <div className="mt-4 flex items-end gap-2.5">
-              <span className="text-[1.65rem] font-black text-dark leading-none tracking-tight">
+            <span className="text-[1.65rem] font-black text-dark dark:text-white leading-none tracking-tight">
               ₹{currentPrice}
               </span>
-              <span className="text-[11px] text-dark/35 font-medium mb-0.5">/{product.unit}</span>
+              <span className="text-[11px] text-dark/35 dark:text-white/45 font-medium mb-0.5">/{product.unit}</span>
               {currentOriginalPrice && (
                 <>
-                  <span className="text-sm text-dark/28 line-through mb-0.5">₹{currentOriginalPrice}</span>
+                  <span className="text-sm text-dark/28 dark:text-white/35 line-through mb-0.5">₹{currentOriginalPrice}</span>
                   <motion.span
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
@@ -304,7 +304,7 @@ const discount = currentOriginalPrice
             </div>
 
             {/* Divider */}
-            <div className="mt-4 h-px bg-gradient-to-r from-transparent via-black/8 to-transparent" />
+            <div className="mt-4 h-px bg-gradient-to-r from-transparent via-black/8 dark:via-white/10 to-transparent" />
 
             {/* Weight pills */}
             {product.weightOptions && product.weightOptions.length > 1 && (
@@ -315,8 +315,8 @@ const discount = currentOriginalPrice
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedWeight(w) }}
                     className={`relative text-[11px] font-bold px-3.5 py-1.5 rounded-full border transition-all duration-300 ${
                       selectedWeight === w
-                        ? 'bg-dark text-white border-dark shadow-soft'
-                        : 'bg-cream text-dark/55 border-black/8 hover:border-dark/25 hover:text-dark'
+                        ? 'bg-dark text-white border-dark shadow-soft dark:bg-white dark:text-dark dark:border-white'
+                        : 'bg-cream text-dark/55 border-black/8 hover:border-dark/25 hover:text-dark dark:bg-white/10 dark:text-white/70 dark:border-white/15 dark:hover:border-white/30 dark:hover:text-white'
                     }`}
                   >
                     {w}
@@ -328,10 +328,10 @@ const discount = currentOriginalPrice
             {/* Quantity + Add to Cart */}
             <div className="mt-4 flex items-center gap-3">
               {/* Quantity — circular controls */}
-              <div className="flex items-center gap-0.5 bg-cream rounded-full border border-black/6">
+              <div className="flex items-center gap-0.5 bg-cream rounded-full border border-black/6 dark:bg-white/10 dark:border-white/15">
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setQty((q) => Math.max(1, q - 1)) }}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-dark/40 hover:text-dark hover:bg-white transition-all duration-200"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-dark/40 hover:text-dark hover:bg-white transition-all duration-200 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/10"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
@@ -339,13 +339,13 @@ const discount = currentOriginalPrice
                   key={qty}
                   initial={{ scale: 0.8, opacity: 0.5 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="w-8 text-center text-[13px] font-extrabold text-dark"
+                  className="w-8 text-center text-[13px] font-extrabold text-dark dark:text-white"
                 >
                   {qty}
                 </motion.span>
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setQty((q) => q + 1) }}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-dark/40 hover:text-dark hover:bg-white transition-all duration-200"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-dark/40 hover:text-dark hover:bg-white transition-all duration-200 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/10"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>

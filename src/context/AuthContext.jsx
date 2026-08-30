@@ -313,64 +313,81 @@ const SettingsCtx = createContext(null)
 
 export function SettingsProvider({ children }) {
   const { isAuthenticated, user } = useAuth()
-  const [settings, setSettings] = useState(() => {
-    const savedSettings = localStorage.getItem('drstores_settings')
-  
-    if (savedSettings) {
-      try {
-        return JSON.parse(savedSettings)
-      } catch {
-        // Ignore invalid saved settings
-      }
-    }
-  
-    return {
-      notifications: { orders: true, offers: true, email: false },
-      darkMode: false,
-      language: 'en',
-    }
-  })
 
-  /* Load settings from user profile when the user object changes */
+  const defaultSettings = {
+    notifications: { orders: true, offers: true, email: false },
+    darkMode: false,
+    language: 'en',
+  }
+
+  const getStorageKey = (userId) =>
+    userId ? `drstores_settings_${userId}` : null
+
+  const [settings, setSettings] = useState(defaultSettings)
+
+  /* Load settings for the currently logged-in account */
   useEffect(() => {
-    const savedSettings = localStorage.getItem('drstores_settings')
-  
+    if (!isAuthenticated || !user) {
+      setSettings(defaultSettings)
+      return
+    }
+
+    const userId = user.id || user._id
+    const storageKey = getStorageKey(userId)
+    const savedSettings = storageKey
+      ? localStorage.getItem(storageKey)
+      : null
+
     if (savedSettings) {
       try {
-        setSettings(JSON.parse(savedSettings))
+        setSettings({
+          ...defaultSettings,
+          ...JSON.parse(savedSettings),
+        })
         return
       } catch {
         // Ignore invalid saved settings
       }
     }
-  
-    if (user?.settings) {
-      setSettings((prev) => ({
-        ...prev,
+
+    if (user.settings) {
+      setSettings({
+        ...defaultSettings,
         ...user.settings,
-      }))
+      })
+    } else {
+      setSettings(defaultSettings)
     }
-  }, [user?.settings])
+  }, [isAuthenticated, user])
 
   const updateSettings = useCallback((patch) => {
+    if (!isAuthenticated || !user) return
+
+    const userId = user.id || user._id
+    const storageKey = getStorageKey(userId)
+
     setSettings((prev) => {
       const updatedSettings = { ...prev, ...patch }
-  
-      localStorage.setItem(
-        'drstores_settings',
-        JSON.stringify(updatedSettings)
-      )
-  
+
+      if (storageKey) {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify(updatedSettings)
+        )
+      }
+
       return updatedSettings
     })
-  
-    /* persist to the user's settings in MongoDB when logged in */
-    if (isAuthenticated) {
-      authApi.updateProfile({ settings: patch }).catch(() => {})
-    }
-  }, [isAuthenticated])
 
-  return <SettingsCtx.Provider value={{ settings, updateSettings }}>{children}</SettingsCtx.Provider>
+    /* Persist settings to the user's MongoDB profile */
+    authApi.updateProfile({ settings: patch }).catch(() => {})
+  }, [isAuthenticated, user])
+
+  return (
+    <SettingsCtx.Provider value={{ settings, updateSettings }}>
+      {children}
+    </SettingsCtx.Provider>
+  )
 }
 
 export function useSettings() {

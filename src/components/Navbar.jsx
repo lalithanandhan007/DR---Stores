@@ -5,6 +5,7 @@ import { Leaf, ShoppingBasket, LogIn, UserPlus, Menu, X, UserRound, Package, Hea
 import { Magnetic, scrollToId } from './ui'
 import { useCart, useToast } from '../context/CartContext'
 import { useAuth, ROLE_LABELS } from '../context/AuthContext'
+import { useTranslation } from '../hooks/useTranslation'
 import AccountMenu from './account/AccountMenu'
 
 const links = [
@@ -14,7 +15,7 @@ const links = [
   { label: 'Contact', to: '/#contact' },
 ]
 
-function NavItem({ link, onClick }) {
+function NavItem({ link, onClick, t }) {
   const isHome = link.to === '/'
   const isVegetables = link.to === '/vegetables'
 
@@ -25,7 +26,7 @@ function NavItem({ link, onClick }) {
         onClick={() => onClick()}
         className="group relative text-sm font-medium text-dark/70 hover:text-dark transition-colors duration-300 px-1 py-2 flex items-center gap-1.5"
       >
-        {link.label}
+        {t(`nav.${link.label.toLowerCase()}`)}
         <span className="absolute left-0 -bottom-0.5 h-[2px] w-0 bg-gradient-to-r from-primary to-secondary transition-all duration-300 group-hover:w-full" />
       </Link>
     )
@@ -38,7 +39,7 @@ function NavItem({ link, onClick }) {
         onClick={() => onClick()}
         className="group relative text-sm font-medium text-dark/70 hover:text-dark transition-colors duration-300 px-1 py-2 flex items-center gap-1.5"
       >
-        {link.label}
+        {t(`nav.${link.label.toLowerCase()}`)}
         <span className="absolute left-0 -bottom-0.5 h-[2px] w-0 bg-gradient-to-r from-primary to-secondary transition-all duration-300 group-hover:w-full" />
       </Link>
     )
@@ -50,7 +51,7 @@ function NavItem({ link, onClick }) {
       onClick={(e) => { e.preventDefault(); onClick(link) }}
       className="group relative text-sm font-medium text-dark/70 hover:text-dark transition-colors duration-300 px-1 py-2 flex items-center gap-1.5"
     >
-      {link.label}
+      {t(`nav.${link.label.toLowerCase()}`)}
       {link.badge && (
         <span className="text-[10px] font-bold uppercase tracking-wide text-accent bg-accent/10 border border-accent/20 rounded-full px-1.5 py-0.5">
           {link.badge}
@@ -70,6 +71,7 @@ export default function Navbar() {
   const { totalItems } = useCart()
   const { isAuthenticated, user, role, logout } = useAuth()
   const { addToast } = useToast()
+  const { t } = useTranslation()
 
   const accountItems = [
     { to: '/profile', label: 'My Profile', icon: UserRound },
@@ -137,7 +139,7 @@ export default function Navbar() {
           <ul className="hidden lg:flex items-center gap-8">
             {links.map((link) => (
               <li key={link.label}>
-                <NavItem link={link} onClick={handleNav} />
+                <NavItem link={link} onClick={handleNav} t={t} />
               </li>
             ))}
           </ul>
@@ -213,13 +215,13 @@ export default function Navbar() {
             <motion.div className="absolute top-20 inset-x-4 glass-card rounded-3xl p-6 shadow-card">
               <ul className="flex flex-col gap-1">
                 {links.map((link, i) => (
-                  <motion.li key={link.label} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}>
+                  <motion.li key={t(`nav.${link.label.toLowerCase()}`)} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}>
                     {link.to.startsWith('/#') ? (
                       <button
                         onClick={() => { handleNav(link) }}
                         className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-dark/80 hover:bg-primary/8 hover:text-primary transition-colors flex items-center gap-2"
                       >
-                        {link.label}
+                        {t(`nav.${link.label.toLowerCase()}`)}
                         {link.badge && (
                           <span className="text-[10px] font-bold uppercase text-accent bg-accent/10 rounded-full px-2 py-0.5">{link.badge}</span>
                         )}
@@ -230,7 +232,7 @@ export default function Navbar() {
                         onClick={() => setOpen(false)}
                         className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-dark/80 hover:bg-primary/8 hover:text-primary transition-colors flex items-center gap-2"
                       >
-                        {link.label}
+                        {t(`nav.${link.label.toLowerCase()}`)}
                         {link.badge && (
                           <span className="text-[10px] font-bold uppercase text-accent bg-accent/10 rounded-full px-2 py-0.5">{link.badge}</span>
                         )}

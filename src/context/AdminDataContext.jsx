@@ -69,6 +69,33 @@ export function AdminDataProvider({ children }) {
       .then((list) => setNotifications(list || []))
       .catch(() => setError('Could not load notifications'))
   }, [])
+  
+  const markNotificationRead = useCallback(async (id) => {
+    try {
+      await notificationApi.markRead(id)
+  
+      setNotifications((prev) =>
+        prev.map((n) => {
+          const notificationId = n.id || n._id
+          return notificationId === id ? { ...n, read: true } : n
+        })
+      )
+    } catch {
+      setError('Could not mark notification as read')
+    }
+  }, [])
+  
+  const markAllNotificationsRead = useCallback(async () => {
+    try {
+      await notificationApi.markAllRead()
+  
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, read: true }))
+      )
+    } catch {
+      setError('Could not mark all notifications as read')
+    }
+  }, [])
 
   const statCards = useMemo(() => {
     if (!stats) return BASE_STATCARDS
@@ -132,6 +159,9 @@ export function AdminDataProvider({ children }) {
     weeklyRevenue, monthlyRevenue, ordersTrend, categoryDistribution,
     topProducts, lowStock, activity, notifications, analytics, recentOrders,
     refresh: load,
+    refreshNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
     refreshNotifications,
   }), [
     loading, error, statCards, stats, adminProfile, storeStatus, storeSettings, weeklyRevenue, monthlyRevenue,

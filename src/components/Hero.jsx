@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Truck, Sparkles, Star, Clock3, MapPin } from 'lucide-react'
 import { Magnetic, scrollToId } from './ui'
+import { useSettings } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { Tomato, Carrot, Capsicum, Broccoli, Onion, Leaf, LeafBig, SpinachLeaf } from './vegetables'
 
@@ -36,6 +37,8 @@ function Particle({ className, delay = 0 }) {
 
 export default function Hero() {
   const navigate = useNavigate()
+  const { settings } = useSettings()
+  const isTamil = settings.language === 'ta'
   return (
     <section id="home" className="relative min-h-screen overflow-hidden flex items-center pt-28 pb-16">
       {/* Ambient background */}
@@ -56,9 +59,11 @@ export default function Hero() {
             className="inline-flex items-center gap-2 bg-white/80 backdrop-blur border border-primary/15 rounded-full pl-2 pr-4 py-1.5 shadow-soft"
           >
             <span className="bg-gradient-to-r from-secondary to-primary text-white text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full">
-              Locally Sourced
-            </span>
-            <span className="text-xs font-medium text-dark/60">Trusted family store since 1998</span>
+  {isTamil ? 'உள்ளூரில் பெறப்பட்டது' : 'Locally Sourced'}
+</span>
+<span className="text-xs font-medium text-dark/60">
+  {isTamil ? '1998 முதல் நம்பகமான குடும்பக் கடை' : 'Trusted family store since 1998'}
+</span>
           </motion.div>
 
           <motion.h1
@@ -67,11 +72,23 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.35, ease }}
             className="mt-6 font-serif-display text-[2.7rem] leading-[1.05] sm:text-6xl lg:text-[4.1rem] xl:text-[4.6rem] font-extrabold tracking-tight text-dark"
           >
-            Farm Fresh
-            <br />
-            Vegetables <span className="text-gradient">&</span>
-            <br />
-            <span className="text-gradient">Daily Grocery</span> Essentials
+            {isTamil ? (
+  <>
+    பண்ணை புதிய
+    <br />
+    காய்கறிகள் <span className="text-gradient">&</span>
+    <br />
+    <span className="text-gradient">தினசரி காய்கறிகள்</span>
+  </>
+) : (
+  <>
+    Farm Fresh
+    <br />
+    Vegetables <span className="text-gradient">&</span>
+    <br />
+    <span className="text-gradient">Daily Grocery</span> Essentials
+  </>
+)}  
           </motion.h1>
 
           <motion.p
@@ -80,8 +97,18 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.48, ease }}
             className="mt-6 text-base sm:text-lg text-dark/60 leading-relaxed font-light max-w-lg"
           >
-            Fresh vegetables sourced daily from trusted local markets and delivered with care.
-            Straight from the farm to your kitchen — always crisp, always honest.
+           {isTamil ? (
+  <>
+    நம்பகமான உள்ளூர் சந்தைகளில் இருந்து தினமும் பெறப்படும்
+    <br />
+    புதிய காய்கறிகள் உங்கள் வீட்டிற்கு கவனமாக வழங்கப்படுகின்றன.
+  </>
+) : (
+  <>
+    Fresh vegetables sourced daily from trusted local markets and delivered with care.
+    Straight from the farm to your kitchen — always crisp, always honest.
+  </>
+)}
           </motion.p>
 
           {/* CTAs */}
@@ -96,7 +123,7 @@ export default function Hero() {
                 onClick={() => navigate('/vegetables')}
                 className="group inline-flex items-center gap-2.5 text-base font-bold text-white bg-gradient-to-r from-primary to-primary-dark px-8 py-4 rounded-full shadow-cta hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300"
               >
-                Shop Vegetables
+                {isTamil ? 'காய்கறிகளை வாங்குங்கள்' : 'Shop Vegetables'}
                 <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
               </button>
             </Magnetic>
@@ -106,7 +133,7 @@ export default function Hero() {
                 className="inline-flex items-center gap-2.5 text-base font-semibold text-dark/80 hover:text-primary bg-white/70 backdrop-blur border border-black/8 px-7 py-4 rounded-full hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5"
               >
                 <Sparkles className="w-5 h-5 text-accent" />
-                Browse Categories
+                {isTamil ? 'வகைகளைப் பார்க்கவும்' : 'Browse Categories'}
               </button>
             </Magnetic>
           </motion.div>
@@ -125,8 +152,10 @@ export default function Hero() {
                 ))}
               </div>
               <span className="text-xs text-dark/55 font-medium max-w-[8rem] leading-tight">
-                4.9 rated by 2,000+ happy families
-              </span>
+  {isTamil
+    ? '2,000+ மகிழ்ச்சியான குடும்பங்களின் 4.9 மதிப்பீடு'
+    : '4.9 rated by 2,000+ happy families'}
+</span>
             </div>
             <div className="flex items-center gap-1.5">
               {[...Array(5)].map((_, i) => (
@@ -191,21 +220,27 @@ export default function Hero() {
           <FloatingVeg className="top-[12%] left-[8%] w-auto" delay={1.2} animClass="float-fast">
             <div className="glass-card rounded-2xl px-3.5 py-2.5 flex items-center gap-2 shadow-card">
               <Truck className="w-4 h-4 text-primary" />
-              <span className="text-xs font-bold text-dark/75 whitespace-nowrap">40 min delivery</span>
+              <span className="text-xs font-bold text-dark/75 whitespace-nowrap">
+  {isTamil ? '40 நிமிட விநியோகம்' : '40 min delivery'}
+</span>
             </div>
           </FloatingVeg>
 
           <FloatingVeg className="bottom-[16%] right-[4%] w-auto" delay={1.3} animClass="float-slow">
             <div className="glass-card rounded-2xl px-3.5 py-2.5 flex items-center gap-2 shadow-card">
               <Clock3 className="w-4 h-4 text-accent" />
-              <span className="text-xs font-bold text-dark/75 whitespace-nowrap">5 KM radius</span>
+              <span className="text-xs font-bold text-dark/75 whitespace-nowrap">
+  {isTamil ? '10 கி.மீ சுற்றளவு' : '10 KM radius'}
+</span>
             </div>
           </FloatingVeg>
 
           <FloatingVeg className="top-[10%] right-[30%] w-auto" delay={1.4} animClass="float-med">
             <div className="glass-card rounded-2xl px-3.5 py-2.5 flex items-center gap-2 shadow-card">
               <MapPin className="w-4 h-4 text-secondary" />
-              <span className="text-xs font-bold text-dark/75 whitespace-nowrap">Local market sourced</span>
+              <span className="text-xs font-bold text-dark/75 whitespace-nowrap">
+  {isTamil ? 'உள்ளூர் சந்தையில் இருந்து' : 'Local market sourced'}
+</span>
             </div>
           </FloatingVeg>
         </motion.div>
@@ -218,7 +253,9 @@ export default function Hero() {
         transition={{ delay: 1.6, duration: 1 }}
         className="absolute bottom-7 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-dark/40"
       >
-        <span className="text-[10px] font-semibold uppercase tracking-[0.3em]">Scroll</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.3em]">
+  {isTamil ? 'ஸ்க்ரோல்' : 'Scroll'}
+</span>
         <motion.span
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}

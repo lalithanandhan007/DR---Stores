@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Search, X, SlidersHorizontal } from 'lucide-react'
 import { useProducts } from '../../context/ProductsContext'
+import { useSettings } from '../../context/AuthContext'
+import { getTranslation } from '../../i18n'
 
 function FilterGroup({ title, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
@@ -51,6 +53,10 @@ function Checkbox({ label, checked, onChange, count }) {
 
 export default function FilterSidebar({ filters, setFilters }) {
   const { products, categories: catDocs } = useProducts()
+  const { settings } = useSettings()
+
+  const language = settings.language || 'en'
+  const t = (key) => getTranslation(language, key)
   const categories = catDocs?.length
     ? catDocs.map((c) => c.name)
     : [...new Set(products.map((p) => p.category))]
@@ -71,7 +77,7 @@ export default function FilterSidebar({ filters, setFilters }) {
           type="text"
           value={filters.search}
           onChange={(e) => set('search', e.target.value)}
-          placeholder="Search vegetables..."
+          placeholder={t('shop.searchVegetables')}
           className="w-full h-10 pl-10 pr-9 rounded-xl bg-cream border border-black/8 text-sm text-dark placeholder:text-dark/35 focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all"
         />
         {filters.search && (
@@ -85,7 +91,7 @@ export default function FilterSidebar({ filters, setFilters }) {
       </div>
 
       {/* Categories */}
-      <FilterGroup title="Categories">
+      <FilterGroup title={t('shop.categories')}>
         <div className="flex flex-col gap-0.5">
           {categories.map((cat) => (
             <Checkbox
@@ -99,7 +105,7 @@ export default function FilterSidebar({ filters, setFilters }) {
       </FilterGroup>
 
       {/* Price Range */}
-      <FilterGroup title="Price Range">
+      <FilterGroup title={t('shop.priceRange')}>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <input
@@ -107,7 +113,7 @@ export default function FilterSidebar({ filters, setFilters }) {
               min="0"
               value={filters.priceMin}
               onChange={(e) => set('priceMin', e.target.value)}
-              placeholder="Min"
+              placeholder={t('shop.min')}
               className="w-full h-9 px-3 rounded-lg bg-cream border border-black/8 text-sm text-dark placeholder:text-dark/35 focus:outline-none focus:border-primary/40 transition-all"
             />
             <span className="text-dark/30">–</span>
@@ -116,7 +122,7 @@ export default function FilterSidebar({ filters, setFilters }) {
               min="0"
               value={filters.priceMax}
               onChange={(e) => set('priceMax', e.target.value)}
-              placeholder="Max"
+              placeholder={t('shop.max')}
               className="w-full h-9 px-3 rounded-lg bg-cream border border-black/8 text-sm text-dark placeholder:text-dark/35 focus:outline-none focus:border-primary/40 transition-all"
             />
           </div>
@@ -124,28 +130,32 @@ export default function FilterSidebar({ filters, setFilters }) {
       </FilterGroup>
 
       {/* Availability */}
-      <FilterGroup title="Availability">
-        <Checkbox label="In Stock" checked={filters.inStock} onChange={() => set('inStock', !filters.inStock)} />
-      </FilterGroup>
+      <FilterGroup title={t('shop.availability')}>
+  <Checkbox
+    label={t('shop.inStock')}
+    checked={filters.inStock}
+    onChange={() => set('inStock', !filters.inStock)}
+  />
+</FilterGroup>
 
       {/* Badges */}
-      <FilterGroup title="Badges">
-        {['organic', 'fresh', 'new', 'popular'].map((b) => (
-          <Checkbox
-            key={b}
-            label={b.charAt(0).toUpperCase() + b.slice(1)}
-            checked={(filters.badges || []).includes(b)}
-            onChange={() => toggleArr('badges', b)}
-          />
-        ))}
+      <FilterGroup title={t('shop.badges')}>
+      {['organic', 'fresh', 'new', 'popular'].map((b) => (
+  <Checkbox
+    key={b}
+    label={t(`shop.${b}`)}
+    checked={(filters.badges || []).includes(b)}
+    onChange={() => toggleArr('badges', b)}
+  />
+))}
       </FilterGroup>
 
       {/* Rating */}
-      <FilterGroup title="Rating">
+      <FilterGroup title={t('shop.rating')}>
         {[4, 3, 2].map((r) => (
           <Checkbox
             key={r}
-            label={`${r}+ stars`}
+            label={`${r}+ ${t('shop.stars')}`}
             checked={filters.minRating === r}
             onChange={() => set('minRating', filters.minRating === r ? 0 : r)}
           />

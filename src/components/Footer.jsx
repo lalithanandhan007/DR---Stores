@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useSettings } from '../context/AuthContext'  
 import { Leaf, Phone, MapPin, Clock, Mail, MessageCircle, ArrowUp } from 'lucide-react'
 import { scrollToId } from './ui'
 
@@ -14,20 +15,65 @@ function Instagram({ className = '' }) {
 
 
 const quickLinks = [
-  { label: 'Home', href: '#home' },
-  { label: 'Vegetables', href: '#categories' },
-  { label: 'About', href: '#why-us' },
-  { label: 'Contact', href: '#contact' },
+  { key: 'home', href: '#home' },
+  { key: 'vegetables', href: '#categories' },
+  { key: 'about', href: '#why-us' },
+  { key: 'contact', href: '#contact' },
 ]
 
 const categories = [
-  'Leafy Vegetables',
-  'Root Vegetables',
-  'Seasonal Vegetables',
-  'Exotic Vegetables',
+  { key: 'leafyVegetables' },
+  { key: 'rootVegetables' },
+  { key: 'seasonalVegetables' },
+  { key: 'exoticVegetables' },
 ]
 
 export default function Footer() {
+  const { settings } = useSettings()
+
+  const t = (key) => {
+    const translations = {
+      en: {
+        quickLinks: 'Quick Links',
+        whatWeDeliver: 'What We Deliver',
+        reachUs: 'Reach Us',
+        freshTrustedLocal: 'Fresh • Trusted • Local',
+        description: 'Fresh, handpicked vegetables delivered straight from our store to your doorstep. Quality you can trust, freshness you can taste.',
+        home: 'Home',
+        vegetables: 'Vegetables',
+        about: 'About',
+        contact: 'Contact',
+        leafyVegetables: 'Leafy Vegetables',
+        rootVegetables: 'Root Vegetables',
+        seasonalVegetables: 'Seasonal Vegetables',
+        exoticVegetables: 'Exotic Vegetables',
+        openAllDays: 'Open all days',
+        backToTop: 'Back to top',
+        rights: 'All rights reserved. Family grown, locally loved.',
+      },
+      ta: {
+        quickLinks: 'விரைவு இணைப்புகள்',
+        whatWeDeliver: 'நாங்கள் வழங்குவது',
+        reachUs: 'எங்களை தொடர்பு கொள்ள',
+        freshTrustedLocal: 'புதியது • நம்பகமானது • உள்ளூர்',
+        description: 'எங்கள் கடையிலிருந்து தேர்ந்தெடுக்கப்பட்ட புதிய காய்கறிகள் உங்கள் வீட்டிற்கே நேரடியாக வழங்கப்படுகின்றன. நம்பகமான தரம், சுவைக்கக்கூடிய புத்துணர்ச்சி.',
+        home: 'முகப்பு',
+        vegetables: 'காய்கறிகள்',
+        about: 'எங்களை பற்றி',
+        contact: 'தொடர்பு',
+        leafyVegetables: 'கீரை வகைகள்',
+        rootVegetables: 'வேர் காய்கறிகள்',
+        seasonalVegetables: 'பருவகால காய்கறிகள்',
+        exoticVegetables: 'அரிய காய்கறிகள்',
+        openAllDays: 'அனைத்து நாட்களும் திறந்திருக்கும்',
+        backToTop: 'மேலே செல்ல',
+        rights: 'அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை. குடும்பத்தால் வளர்க்கப்பட்டு, உள்ளூரில் நேசிக்கப்படுகிறது.',
+      },
+    }
+
+    return translations[settings.language]?.[key] || translations.en[key]
+  }
+
   return (
     <footer id="contact" className="relative bg-dark text-white overflow-hidden">
       {/* ambient */}
@@ -53,7 +99,7 @@ export default function Footer() {
                   D.R<span className="text-secondary">.</span>STORES
                 </span>
                 <span className="block text-[10px] font-semibold uppercase tracking-[0.28em] text-white/40 mt-1.5">
-                  Fresh • Trusted • Local
+                {t('freshTrustedLocal')}
                 </span>
               </span>
             </motion.div>
@@ -65,8 +111,7 @@ export default function Footer() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="mt-6 text-sm text-white/55 leading-relaxed font-light max-w-sm"
             >
-              Fresh, handpicked vegetables delivered straight from our store to your doorstep.
-              Quality you can trust, freshness you can taste.
+              {t('description')}
             </motion.p>
 
             <motion.div
@@ -109,16 +154,16 @@ export default function Footer() {
 
           {/* Quick links */}
           <div className="lg:col-span-2">
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Quick Links</h4>
+            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">{t('quickLinks')}</h4>
             <ul className="mt-5 space-y-3">
               {quickLinks.map((l) => (
-                <li key={l.label}>
+                <li key={l.key}>
                   <button
                     onClick={() => scrollToId(l.href)}
                     className="group text-sm text-white/60 hover:text-secondary transition-colors duration-300 flex items-center gap-2"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-secondary/50 group-hover:bg-secondary transition-colors" />
-                    {l.label}
+                    {t(l.key)}
                   </button>
                 </li>
               ))}
@@ -129,14 +174,14 @@ export default function Footer() {
           <div className="lg:col-span-3">
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">What We Deliver</h4>
             <ul className="mt-5 space-y-3">
-              {categories.map((c) => (
-                <li key={c}>
+            {categories.map((c) => (
+                <li key={c.key}>
                   <button
                     onClick={() => scrollToId('#categories')}
                     className="group text-sm text-white/60 hover:text-secondary transition-colors duration-300 flex items-center gap-2"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-secondary/50 group-hover:bg-secondary transition-colors" />
-                    {c}
+                    {t(c.key)}
                   </button>
                 </li>
               ))}
@@ -145,7 +190,9 @@ export default function Footer() {
 
           {/* Contact */}
           <div className="lg:col-span-3">
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Reach Us</h4>
+          <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">
+                                                                {t('reachUs')}
+          </h4>
             <ul className="mt-5 space-y-4">
               <li className="flex items-start gap-3 text-sm text-white/60">
                 <MapPin className="w-4.5 h-4.5 text-secondary shrink-0 mt-0.5" />
@@ -161,7 +208,10 @@ export default function Footer() {
               </li>
               <li className="flex items-start gap-3 text-sm text-white/60">
                 <Clock className="w-4.5 h-4.5 text-secondary shrink-0 mt-0.5" />
-                <span className="font-light">Open all days<br />8:30 AM — 11:00 PM</span>
+                <span className="font-light">
+  {t('openAllDays')}<br />
+  8:30 AM — 11:00 PM
+</span>
               </li>
             </ul>
           </div>
@@ -170,7 +220,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-14 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-white/40 font-light">
-            © {new Date().getFullYear()} D.R.STORES. All rights reserved. Family grown, locally loved.
+          © {new Date().getFullYear()} D.R.STORES. {t('rights')}
           </p>
 
           <div className="flex items-center gap-5">
@@ -178,7 +228,7 @@ export default function Footer() {
               onClick={() => scrollToId('#home')}
               className="inline-flex items-center gap-2 text-xs text-white/50 hover:text-secondary transition-colors"
             >
-              Back to top
+              {t('backToTop')}
               <span className="w-8 h-8 rounded-full bg-white/8 border border-white/10 flex items-center justify-center">
                 <ArrowUp className="w-3.5 h-3.5" />
               </span>

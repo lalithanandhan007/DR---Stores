@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSettings } from '../context/AuthContext'
 import L from 'leaflet'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bike, Clock3, MapPin, PackageCheck, X, CheckCircle2, AlertCircle } from 'lucide-react'
@@ -95,10 +96,34 @@ function LocationPicker({ onSelect, selectedLocation }) {
 
 
 const stats = [
-  { icon: MapPin, label: 'Delivery Radius', value: '10 KM', color: 'text-primary bg-primary/10' },
-  { icon: Clock3, label: 'Average Delivery', value: '40 Min', color: 'text-accent bg-accent/10' },
-  { icon: PackageCheck, label: 'Orders Delivered', value: '10K+', color: 'text-secondary bg-secondary/10' },
-  { icon: Bike, label: 'Own Fleet', value: '24/7', color: 'text-primary-dark bg-primary/10' },
+  {
+    icon: MapPin,
+    label: 'Delivery Radius',
+    tamilLabel: 'விநியோக வரம்பு',
+    value: '10 KM',
+    color: 'text-primary bg-primary/10',
+  },
+  {
+    icon: Clock3,
+    label: 'Average Delivery',
+    tamilLabel: 'சராசரி விநியோகம்',
+    value: '40 Min',
+    color: 'text-accent bg-accent/10',
+  },
+  {
+    icon: PackageCheck,
+    label: 'Orders Delivered',
+    tamilLabel: 'விநியோகிக்கப்பட்ட ஆர்டர்கள்',
+    value: '10K+',
+    color: 'text-secondary bg-secondary/10',
+  },
+  {
+    icon: Bike,
+    label: 'Own Fleet',
+    tamilLabel: 'சொந்த வாகனங்கள்',
+    value: '24/7',
+    color: 'text-primary-dark bg-primary/10',
+  },
 ]
 
 export default function DeliveryBanner() {
@@ -106,6 +131,8 @@ export default function DeliveryBanner() {
   const [selectedLocation, setSelectedLocation] = useState(null)
   const [result, setResult] = useState(null)
 
+  const { settings } = useSettings()
+  const isTamil = settings.language === 'ta'
 
   const checkDelivery = () => {
     if (!selectedLocation) {
@@ -165,20 +192,31 @@ export default function DeliveryBanner() {
               <Reveal>
                 <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/80 bg-white/10 border border-white/20 px-4 py-2 rounded-full">
                   <Bike className="w-4 h-4" />
-                  Lightning Delivery
+                  {isTamil ? 'வேகமான விநியோகம்' : 'Lightning Delivery'} 
                 </span>
               </Reveal>
               <Reveal delay={0.1}>
                 <h2 className="mt-5 font-serif-display text-3xl sm:text-4xl lg:text-[2.9rem] font-bold leading-[1.15] tracking-tight">
-                  From our store to
-                  <br />
-                  <span className="text-accent-light">your door in 40 minutes.</span>
+                {isTamil ? (
+  <>
+    எங்கள் கடையிலிருந்து
+    <br />
+    <span className="text-accent-light">40 நிமிடங்களில் உங்கள் வீட்டு வாசலுக்கு.</span>
+  </>
+) : (
+  <>
+    From our store to
+    <br />
+    <span className="text-accent-light">your door in 40 minutes.</span>
+  </>
+)}
                 </h2>
               </Reveal>
               <Reveal delay={0.2}>
                 <p className="mt-5 text-white/70 text-base lg:text-lg font-light max-w-md leading-relaxed">
-                  We deliver fresh across a 5 KM radius — hot, cold or crisp, exactly how it should be.
-                  Every order packed with care and delivered with a smile.
+                {isTamil
+  ? '5 KM சுற்றளவில் புதிய பொருட்களை வழங்குகிறோம் — ஒவ்வொரு ஆர்டரும் கவனமாக பேக் செய்யப்பட்டு, புன்னகையுடன் உங்கள் வீட்டிற்கு கொண்டு வரப்படும்.'
+  : 'We deliver fresh across a 5 KM radius — hot, cold or crisp, exactly how it should be. Every order packed with care and delivered with a smile.'}
                 </p>
               </Reveal>
 
@@ -191,7 +229,7 @@ export default function DeliveryBanner() {
                       </span>
                       <span>
                         <span className="block text-lg font-extrabold leading-none">{s.value}</span>
-                        <span className="block text-[11px] text-white/60 mt-1 font-medium">{s.label}</span>
+                        <span className="block text-[11px] text-white/60 mt-1 font-medium">{isTamil ? s.tamilLabel : s.label}</span>
                       </span>
                     </div>
                   </StaggerItem>
@@ -209,7 +247,7 @@ export default function DeliveryBanner() {
                     className="inline-flex items-center gap-2.5 text-base font-bold text-primary-dark bg-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
                   >
                     <MapPin className="w-5 h-5" />
-                    Check Delivery in Your Area
+                    {isTamil ? 'உங்கள் பகுதியில் விநியோகம் உள்ளதா?' : 'Check Delivery in Your Area'}
                   </button>
                 </Magnetic>
               </Reveal>
@@ -228,7 +266,9 @@ export default function DeliveryBanner() {
                 className="absolute top-4 left-4 glass rounded-2xl px-4 py-2.5 shadow-card flex items-center gap-2"
               >
                 <Clock3 className="w-4.5 h-4.5 text-primary" />
-                <span className="text-sm font-bold text-dark/80">40 min</span>
+                <span className="text-sm font-bold text-dark/80">
+  {isTamil ? '40 நிமிடம்' : '40 min'}
+</span>
               </motion.div>
               <motion.div
                 animate={{ y: [0, 8, 0] }}
@@ -236,7 +276,9 @@ export default function DeliveryBanner() {
                 className="absolute bottom-6 right-2 glass rounded-2xl px-4 py-2.5 shadow-card flex items-center gap-2"
               >
                 <PackageCheck className="w-4.5 h-4.5 text-accent" />
-                <span className="text-sm font-bold text-dark/80">Fresh &amp; sealed</span>
+                <span className="text-sm font-bold text-dark/80">
+                {isTamil ? 'புதியது & பாதுகாப்பாக பேக் செய்யப்பட்டது' : 'Fresh & sealed'}
+</span>
               </motion.div>
             </Reveal>
           </div>
@@ -274,12 +316,14 @@ export default function DeliveryBanner() {
           </div>
 
           <h3 className="text-xl font-bold text-dark">
-            Check Delivery Availability
-          </h3>
+  {isTamil ? 'விநியோக வசதி உள்ளதா என சரிபார்க்கவும்' : 'Check Delivery Availability'}
+</h3>
 
-          <p className="mt-2 text-sm text-dark/60">
-          Select your location on the map to check whether we deliver to your area.
-          </p>
+<p className="mt-2 text-sm text-dark/60">
+  {isTamil
+    ? 'உங்கள் பகுதியில் நாங்கள் விநியோகம் செய்கிறோமா என்பதை அறிய வரைபடத்தில் உங்கள் இருப்பிடத்தைத் தேர்ந்தெடுக்கவும்.'
+    : 'Select your location on the map to check whether we deliver to your area.'}
+</p>
         </div>
 
         <div className="mt-6 h-[300px] overflow-hidden rounded-2xl border border-black/10">
@@ -305,34 +349,42 @@ export default function DeliveryBanner() {
       </div>
 
 <p className="mt-3 text-center text-xs text-dark/50">
-  Click anywhere on the map to select your delivery location.
+{isTamil
+  ? 'உங்கள் விநியோக இருப்பிடத்தைத் தேர்ந்தெடுக்க வரைபடத்தில் எங்கு வேண்டுமானாலும் கிளிக் செய்யவும்.'
+  : 'Click anywhere on the map to select your delivery location.'}
 </p>
 
 <button
   onClick={checkDelivery}
   className="mt-4 w-full rounded-xl bg-primary py-3 text-sm font-bold text-white hover:bg-primary-dark transition-colors"
 >
-  Check Availability
+{isTamil ? 'வசதி உள்ளதா என சரிபார்க்கவும்' : 'Check Availability'}
 </button>
 
 {result === 'select-location' && (
   <div className="mt-4 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-700">
     <AlertCircle className="w-5 h-5 shrink-0" />
-    Please select your delivery location on the map first.
+    {isTamil
+  ? 'முதலில் வரைபடத்தில் உங்கள் விநியோக இருப்பிடத்தைத் தேர்ந்தெடுக்கவும்.'
+  : 'Please select your delivery location on the map first.'}
   </div>
 )}
 
 {result?.status === 'available' && (
   <div className="mt-4 flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 p-3 text-sm text-green-700">
     <CheckCircle2 className="w-5 h-5 shrink-0" />
-    Great! We deliver to this location. It is {result.distance} KM from our store.
+    {isTamil
+  ? `சிறப்பு! இந்த இடத்திற்கு நாங்கள் விநியோகம் செய்கிறோம். இது எங்கள் கடையிலிருந்து ${result.distance} KM தொலைவில் உள்ளது.`
+  : `Great! We deliver to this location. It is ${result.distance} KM from our store.`}
   </div>
 )}
 
 {result?.status === 'unavailable' && (
   <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700">
     <AlertCircle className="w-5 h-5 shrink-0" />
-    Sorry, this location is {result.distance} KM from our store, which is outside our 10 KM delivery radius.
+    {isTamil
+  ? `மன்னிக்கவும், இந்த இடம் எங்கள் கடையிலிருந்து ${result.distance} KM தொலைவில் உள்ளது. இது எங்கள் 10 KM விநியோக வரம்பிற்கு வெளியே உள்ளது.`
+  : `Sorry, this location is ${result.distance} KM from our store, which is outside our 10 KM delivery radius.`}
   </div>
 )}
       </motion.div>
