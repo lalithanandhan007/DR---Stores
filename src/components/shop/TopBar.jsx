@@ -1,7 +1,13 @@
 import { Search, SlidersHorizontal, Grid3X3, List, X } from 'lucide-react'
 import { sortOptions } from '../../data/productConfig'
+import { useSettings } from '../../context/AuthContext'
+import { getTranslation } from '../../i18n'
 
 export default function TopBar({ filters, setFilters, viewMode, setViewMode, resultCount, onOpenFilters }) {
+  const { settings } = useSettings()
+  const language = settings.language || 'en'
+  const t = (key) => getTranslation(language, key)
+
   const set = (key, val) => setFilters((f) => ({ ...f, [key]: val }))
 
   return (
@@ -13,7 +19,7 @@ export default function TopBar({ filters, setFilters, viewMode, setViewMode, res
           type="text"
           value={filters.search}
           onChange={(e) => set('search', e.target.value)}
-          placeholder="Search vegetables..."
+          placeholder={t('shop.searchVegetables')}
           className="w-full h-10 pl-10 pr-9 rounded-xl bg-white border border-black/8 text-sm text-dark placeholder:text-dark/35 focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all"
         />
         {filters.search && (
@@ -32,7 +38,7 @@ export default function TopBar({ filters, setFilters, viewMode, setViewMode, res
         className="lg:hidden inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-black/8 text-sm font-semibold text-dark/70 hover:border-primary/30 transition-colors"
       >
         <SlidersHorizontal className="w-4 h-4" />
-        Filters
+        {t('shop.filters')}
       </button>
 
       {/* Sort */}
@@ -43,8 +49,10 @@ export default function TopBar({ filters, setFilters, viewMode, setViewMode, res
           className="h-10 pl-4 pr-10 rounded-xl bg-white border border-black/8 text-sm font-medium text-dark/70 appearance-none focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer"
         >
           {sortOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
+  <option key={opt.value} value={opt.value}>
+    {t(`shop.sort.${opt.value}`)}
+  </option>
+))}
         </select>
         <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark/40 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
@@ -53,7 +61,7 @@ export default function TopBar({ filters, setFilters, viewMode, setViewMode, res
 
       {/* Results count */}
       <span className="text-sm text-dark/45 font-medium hidden sm:block">
-        {resultCount} product{resultCount !== 1 ? 's' : ''}
+      {resultCount} {t('shop.products')}
       </span>
 
       {/* Spacer */}
@@ -81,7 +89,7 @@ export default function TopBar({ filters, setFilters, viewMode, setViewMode, res
 
       {/* Mobile result count */}
       <span className="text-sm text-dark/45 font-medium sm:hidden">
-        {resultCount} product{resultCount !== 1 ? 's' : ''}
+      {resultCount} {t('shop.products')}
       </span>
     </div>
   )

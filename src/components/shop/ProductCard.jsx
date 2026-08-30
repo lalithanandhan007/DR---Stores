@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
 import { Heart, ShoppingCart, Eye, Star, Minus, Plus, Leaf, Clock, Award, TrendingUp, MapPin, Tag, Check } from 'lucide-react'
 import { useCart, useToast } from '../../context/CartContext'
-import { useWishlist } from '../../context/AuthContext'
+import { useWishlist, useSettings } from '../../context/AuthContext'
+import { getTranslation } from '../../i18n'
 import ProductVisual from './ProductVisual'
 
 /* ---------- Premium badge component ---------- */
@@ -96,6 +97,14 @@ export default function ProductCard({ product, index = 0 }) {
   const { addItem } = useCart()
   const { addToast } = useToast()
   const { toggleWishlist, isWishlisted } = useWishlist()
+  const { settings } = useSettings()
+
+  const language = settings.language || 'en'
+  const t = (key) => getTranslation(language, key)
+
+  const productName =
+  t(`shop.productNames.${product.name}`) || product.name
+
   const liked = isWishlisted(product.id)
   const spotlight = useSpotlight()
 
@@ -123,7 +132,7 @@ const discount = currentOriginalPrice
 
     addItem(product, selectedWeight, qty)
     setAdded(true)
-    addToast(`${product.name} added to cart`, 'success')
+    addToast(`${productName} ${t('shop.addedToCart')}`, 'success')
     setTimeout(() => setAdded(false), 1200)
   }
 
@@ -132,7 +141,7 @@ const discount = currentOriginalPrice
     e.stopPropagation()
     if (!liked) {
       setShowParticles(true)
-      addToast(`${product.name} added to wishlist`, 'info')
+      addToast(`${productName} ${t('shop.addedToWishlist')}`, 'info')
       setTimeout(() => setShowParticles(false), 1000)
     }
     toggleWishlist(product)
@@ -196,16 +205,16 @@ const discount = currentOriginalPrice
             {/* Badges — top left */}
             <div className="absolute top-3.5 left-3.5 flex flex-col gap-1.5 z-10">
               {product.badges.includes('organic') && (
-                <Badge icon={Leaf} label="Organic" variant="organic" />
+                <Badge icon={Leaf} label={t('shop.organic')} variant="organic" />
               )}
               {product.badges.includes('fresh') && (
-                <Badge icon={Clock} label="Fresh Today" variant="fresh" />
+                <Badge icon={Clock} label={t('shop.freshToday')} variant="fresh" />
               )}
               {product.rating >= 4.8 && (
-                <Badge icon={Award} label="Best Seller" variant="bestseller" />
+                <Badge icon={Award} label={t('shop.bestSeller')} variant="bestseller" />
               )}
               {product.stock <= 30 && (
-                <Badge icon={TrendingUp} label="Limited Stock" variant="limited" />
+                <Badge icon={TrendingUp} label={t('shop.limitedStock')} variant="limited" />  
               )}
             </div>
 
@@ -218,7 +227,7 @@ const discount = currentOriginalPrice
               >
                 <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-white bg-gradient-to-r from-accent via-orange-500 to-red-400 px-3 py-1.5 rounded-full shadow-lg">
                   <Tag className="w-3 h-3" />
-                  {discount}% OFF
+                  {discount}% {t('shop.off')}
                 </span>
               </motion.div>
             )}
@@ -275,7 +284,7 @@ const discount = currentOriginalPrice
 
             {/* Name — large, dominant */}
             <h3 className="text-[17px] font-extrabold text-dark dark:text-white leading-snug tracking-tight group-hover:text-primary transition-colors duration-300">
-              {product.name}
+              {productName}
             </h3>
 
             {/* Description — soft, small */}
@@ -288,7 +297,7 @@ const discount = currentOriginalPrice
             <span className="text-[1.65rem] font-black text-dark dark:text-white leading-none tracking-tight">
               ₹{currentPrice}
               </span>
-              <span className="text-[11px] text-dark/35 dark:text-white/45 font-medium mb-0.5">/{product.unit}</span>
+              <span className="text-[11px] text-dark/35 dark:text-white/45 font-medium mb-0.5">/{selectedWeight}</span>
               {currentOriginalPrice && (
                 <>
                   <span className="text-sm text-dark/28 dark:text-white/35 line-through mb-0.5">₹{currentOriginalPrice}</span>
@@ -297,7 +306,7 @@ const discount = currentOriginalPrice
                     animate={{ scale: 1 }}
                     className="text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/50 px-2 py-0.5 rounded-full mb-0.5"
                   >
-                    Save ₹{currentOriginalPrice - currentPrice}
+                    {t('shop.save')} ₹{currentOriginalPrice - currentPrice}
                   </motion.span>
                 </>
               )}
@@ -371,7 +380,7 @@ const discount = currentOriginalPrice
                       className="flex items-center gap-1.5"
                     >
                       <Check className="w-4 h-4" strokeWidth={3} />
-                      Added!
+                      {t('shop.added')}
                     </motion.span>
                   ) : (
                     <motion.span
@@ -382,7 +391,7 @@ const discount = currentOriginalPrice
                       className="flex items-center gap-1.5"
                     >
                       <ShoppingCart className="w-4 h-4" />
-                      Add to Cart
+                      {t('common.addToCart')}
                     </motion.span>
                   )}
                 </AnimatePresence>

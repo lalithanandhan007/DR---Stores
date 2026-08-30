@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSettings } from '../context/AuthContext'
+import { getTranslation } from '../i18n'
 import {
   Trash2, Minus, Plus, ShoppingBag, Tag, Truck, Clock, ArrowRight, ArrowLeft,
   Heart, ChevronRight, Package, ShieldCheck, X, Check, Gift, Copy, AlertCircle,
@@ -24,7 +26,7 @@ function EmptyCart() {
 }
 
 /* ========== COUPON PANEL ========== */
-function CouponPanel() {
+function CouponPanel({ t }) {
   const [code, setCode] = useState('')
   const [result, setResult] = useState(null)
   const { applyCoupon, removeCoupon, appliedCoupon, subtotal } = useCart()
@@ -45,7 +47,7 @@ function CouponPanel() {
   return (
     <div className="p-5 rounded-2xl bg-white border border-black/5">
       <h3 className="text-sm font-bold text-dark mb-3 flex items-center gap-2">
-        <Gift className="w-4 h-4 text-accent" /> Have a coupon?
+      <Gift className="w-4 h-4 text-accent" /> {t('cart.haveCoupon')}
       </h3>
 
       {appliedCoupon ? (
@@ -67,11 +69,11 @@ function CouponPanel() {
               value={code}
               onChange={(e) => { setCode(e.target.value); setResult(null) }}
               onKeyDown={(e) => e.key === 'Enter' && handleApply()}
-              placeholder="Enter coupon code"
+              placeholder={t('cart.enterCouponCode')}
               className="flex-1 h-11 px-4 rounded-xl bg-cream border border-black/8 text-sm font-medium text-dark placeholder:text-dark/30 focus:outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all"
             />
             <motion.button whileTap={{ scale: 0.95 }} onClick={handleApply} className="h-11 px-5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
-              Apply
+            {t('cart.apply')}
             </motion.button>
           </div>
 
@@ -106,6 +108,13 @@ function CouponPanel() {
 /* ========== CART ITEM ========== */
 function CartItem({ item, index }) {
   const { updateQty, removeItem } = useCart()
+  const { settings } = useSettings()
+
+  const language = settings.language || 'en'
+  const t = (key) => getTranslation(language, key)
+
+  const productName = (name) =>
+    getTranslation(language, `shop.productNames.${name}`)
   const { addToast } = useToast()
   const [removing, setRemoving] = useState(false)
   const { key, product, weight, qty } = item
@@ -114,7 +123,7 @@ function CartItem({ item, index }) {
     setRemoving(true)
     setTimeout(() => {
       removeItem(key)
-      addToast(`${product.name} removed from cart`, 'info')
+      addToast(`${productName(product.name)} ${t('cart.removedFromCart')}`, 'info')
     }, 200)
   }
 
@@ -140,7 +149,7 @@ function CartItem({ item, index }) {
         <div className="flex items-start justify-between gap-2">
           <div>
             <Link to={`/vegetables/${product.id}`} className="text-[15px] font-bold text-dark hover:text-primary transition-colors leading-tight">
-              {product.name}
+            {productName(product.name)} 
             </Link>
             <p className="text-[11px] text-dark/40 mt-0.5">{product.category} • {weight}</p>
           </div>
@@ -173,19 +182,19 @@ function CartItem({ item, index }) {
 }
 
 /* ========== DELIVERY OPTIONS ========== */
-function DeliveryOptions() {
+function DeliveryOptions({ t }) {
   const { selectedSlot, setSelectedSlot } = useCart()
   const slots = [
-    { id: 'express', icon: '⚡', label: 'Express', time: '40 min', price: 30 },
-    { id: 'morning', icon: '🌅', label: 'Tomorrow AM', time: '8-11 AM', price: 0 },
-    { id: 'afternoon', icon: '☀️', label: 'Tomorrow PM', time: '12-3 PM', price: 0 },
-    { id: 'evening', icon: '🌆', label: 'Tomorrow Eve', time: '5-8 PM', price: 0 },
+    { id: 'express', icon: '⚡', label: t('cart.express'), time: '40 min', price: 30 },
+    { id: 'morning', icon: '🌅', label: t('cart.tomorrowAM'), time: '8-11 AM', price: 0 },
+    { id: 'afternoon', icon: '☀️', label: t('cart.tomorrowPM'), time: '12-3 PM', price: 0 },
+    { id: 'evening', icon: '🌆', label: t('cart.tomorrowEve'), time: '5-8 PM', price: 0 },
   ]
 
   return (
     <div className="p-5 rounded-2xl bg-white border border-black/5">
       <h3 className="text-sm font-bold text-dark mb-3 flex items-center gap-2">
-        <Truck className="w-4 h-4 text-primary" /> Delivery Options
+      <Truck className="w-4 h-4 text-primary" /> {t('cart.deliveryOptions')}
       </h3>
       <div className="grid grid-cols-2 gap-2">
         {slots.map((s) => (
@@ -202,7 +211,7 @@ function DeliveryOptions() {
             <span className="block text-xs font-bold text-dark mt-1">{s.label}</span>
             <span className="block text-[10px] text-dark/40">{s.time}</span>
             <span className={`block text-[11px] font-bold mt-1 ${s.price > 0 ? 'text-accent' : 'text-primary'}`}>
-              {s.price > 0 ? `₹${s.price}` : 'Free'}
+            {s.price > 0 ? `â‚¹${s.price}` : t('cart.free')}
             </span>
           </button>
         ))}
@@ -281,6 +290,10 @@ function OrderSummary() {
 /* ========== CART PAGE ========== */
 export default function CartPage() {
   const { cartItems } = useCart()
+  const { settings } = useSettings()
+
+  const language = settings.language || 'en'
+  const t = (key) => getTranslation(language, key)
 
   return (
     <div className="min-h-screen bg-cream pt-28">
@@ -310,12 +323,12 @@ export default function CartPage() {
 
               {/* Delivery Options */}
               <div className="mt-6">
-                <DeliveryOptions />
+              <DeliveryOptions t={t} />
               </div>
 
               {/* Coupon */}
               <div className="mt-4">
-                <CouponPanel />
+              <CouponPanel t={t} />
               </div>
             </div>
 

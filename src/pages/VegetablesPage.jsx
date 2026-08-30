@@ -16,12 +16,12 @@ const defaultFilters = {
 }
 
 const sortOptions = [
-  { value: 'newest', label: 'Newest First' },
-  { value: 'price-low', label: 'Price: Low → High' },
-  { value: 'price-high', label: 'Price: High → Low' },
-  { value: 'popularity', label: 'Most Popular' },
-  { value: 'rating', label: 'Top Rated' },
-  { value: 'name-asc', label: 'A → Z' },
+  { value: 'newest', key: 'shop.newestFirst' },
+  { value: 'price-low', key: 'shop.priceLowHigh' },
+  { value: 'price-high', key: 'shop.priceHighLow' },
+  { value: 'popularity', key: 'shop.mostPopular' },
+  { value: 'rating', key: 'shop.topRated' },
+  { value: 'name-asc', key: 'shop.aToZ' },
 ]
 
 /* ---------- Floating decorative leaf ---------- */
@@ -218,7 +218,7 @@ export default function VegetablesPage() {
                   type="text"
                   value={filters.search}
                   onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                  placeholder="Search vegetables..."
+                  placeholder={t('shop.searchVegetables')}
                   className="w-full h-12 pl-11 pr-10 rounded-2xl bg-white/80 backdrop-blur border border-black/8 text-sm text-dark placeholder:text-dark/30 focus:outline-none focus:border-primary/30 focus:ring-4 focus:ring-primary/8 transition-all shadow-soft"
                 />
                 {filters.search && (
@@ -248,7 +248,9 @@ export default function VegetablesPage() {
                   className="h-11 pl-4 pr-11 rounded-2xl bg-white/80 backdrop-blur border border-black/8 text-sm font-medium text-dark/65 appearance-none focus:outline-none focus:border-primary/30 focus:ring-4 focus:ring-primary/8 transition-all cursor-pointer shadow-soft"
                 >
                   {sortOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value}>
+                    {t(opt.key)}
+                  </option>
                   ))}
                 </select>
                 <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dark/35 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
