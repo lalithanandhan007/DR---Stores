@@ -7,6 +7,8 @@ import {
   ArrowLeft, Check, Share2,
 } from 'lucide-react'
 import { useProducts } from '../context/ProductsContext'
+import { useSettings } from '../context/AuthContext'
+import { getTranslation } from '../i18n' 
 import { reviewApi } from '../api'
 import ProductCard from '../components/shop/ProductCard'
 import Skeleton from '../components/ui/Skeleton'
@@ -31,7 +33,7 @@ function TabBtn({ label, icon: Icon, active, onClick }) {
 }
 
 /* ---------- Review card ---------- */
-function ReviewCard({ review, index }) {
+function ReviewCard({ review, index, t }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -54,7 +56,7 @@ function ReviewCard({ review, index }) {
           </div>
           <p className="text-[13px] text-dark/60 leading-relaxed">{review.text}</p>
           <button className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] text-dark/35 hover:text-primary transition-colors font-medium">
-            <ThumbsUp className="w-3 h-3" /> Helpful ({review.helpful})
+          <ThumbsUp className="w-3 h-3" /> {t('shop.productDetail.helpful')} ({review.helpful})
           </button>
         </div>
       </div>
@@ -67,6 +69,11 @@ const nutritionIcons = {
 }
 
 export default function ProductDetailPage() {
+  
+
+  const { settings } = useSettings()
+  const language = settings.language || 'en'
+const t = (key) => getTranslation(language, key)
   const { id } = useParams()
   const [reviews, setReviews] = useState([])
   const [reviewsLoading, setReviewsLoading] = useState(true)
@@ -97,6 +104,11 @@ export default function ProductDetailPage() {
   const { toggleWishlist, isWishlisted } = useWishlist()
   const liked = isWishlisted(product?.id)
   const purchaseRef = useRef(null)
+
+  
+
+  const productName =
+  t(`shop.productNames.${product?.name}`) || product?.name
 
   useEffect(() => {
     if (product) {
@@ -144,7 +156,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-cream pt-28 flex items-center justify-center">
         <div className="text-center">
           <span className="text-7xl mb-5 block">🔍</span>
-          <h1 className="text-3xl font-bold text-dark/65">Product not found</h1>
+          <h1 className="text-3xl font-bold text-dark/65">{t('shop.productDetail.productNotFound')}</h1>
           <Link to="/vegetables" className="mt-5 inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-gradient-to-r from-primary to-primary-dark text-white font-bold text-sm hover:shadow-cta transition-all">
             <ArrowLeft className="w-4 h-4" /> Browse Vegetables
           </Link>
@@ -168,16 +180,20 @@ const discount = currentOriginalPrice
   const handleAdd = () => {
     addItem(product, selectedWeight, qty)
     setAdded(true)
-    addToast(`${product.name} added to cart`, 'success')
+    addToast(`${productName} ${t('shop.addedToCart')}`, 'success')
     setTimeout(() => setAdded(false), 1200)
   }
 
   const tabs = [
-    { id: 'nutrition', label: 'Nutrition', icon: Award },
-    { id: 'benefits', label: 'Benefits', icon: Leaf },
-    { id: 'origin', label: 'Origin', icon: MapPin },
-    { id: 'storage', label: 'Storage', icon: Thermometer },
-    { id: 'reviews', label: `Reviews (${reviews.length})`, icon: ThumbsUp },
+    { id: 'nutrition', label: t('shop.productDetail.nutrition'), icon: Award },
+    { id: 'benefits', label: t('shop.productDetail.benefits'), icon: Leaf },
+    { id: 'origin', label: t('shop.productDetail.origin'), icon: MapPin },
+    { id: 'storage', label: t('shop.productDetail.storage'), icon: Thermometer },
+    {
+      id: 'reviews',
+      label: `${t('shop.productDetail.customerReviews')} (${reviews.length})`,
+      icon: ThumbsUp,
+    },
   ]
 
   return (
@@ -196,11 +212,15 @@ const discount = currentOriginalPrice
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-2 text-sm text-dark/40 mb-8"
         >
-          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+          <Link to="/" className="hover:text-primary transition-colors">
+         {t('common.home')}
+          </Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          <Link to="/vegetables" className="hover:text-primary transition-colors">Vegetables</Link>
+          <Link to="/vegetables" className="hover:text-primary transition-colors">
+          {t('common.vegetables')}
+          </Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-dark/65 font-medium">{product.name}</span>
+          <span className="text-dark/65 font-medium">{productName}</span>
         </motion.nav>
 
         {/* Main product section */}
@@ -221,12 +241,12 @@ const discount = currentOriginalPrice
               <div className="absolute top-5 left-5 flex flex-col gap-2 z-10">
                 {product.badges.includes('organic') && (
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-white/90 backdrop-blur border border-emerald-200/60 px-3.5 py-1.5 rounded-full shadow-sm">
-                    <Leaf className="w-3.5 h-3.5" /> Organic
+                    <Leaf className="w-3.5 h-3.5" />{t('shop.productDetail.organic')}
                   </span>
                 )}
                 {product.badges.includes('fresh') && (
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 bg-white/90 backdrop-blur border border-sky-200/60 px-3.5 py-1.5 rounded-full shadow-sm">
-                    <Clock className="w-3.5 h-3.5" /> Fresh Today
+                    <Clock className="w-3.5 h-3.5" />{t('shop.productDetail.freshToday')}
                   </span>
                 )}
               </div>
@@ -239,7 +259,7 @@ const discount = currentOriginalPrice
 
               {/* Zoom hint */}
               <div className="absolute bottom-5 right-5 glass-card rounded-xl px-3.5 py-2 flex items-center gap-2 text-xs font-medium text-dark/50">
-                <Eye className="w-4 h-4" /> Click to zoom
+              <Eye className="w-4 h-4" /> {t('shop.productDetail.clickToZoom')}
               </div>
             </div>
 
@@ -278,15 +298,17 @@ const discount = currentOriginalPrice
             {/* Top badges */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-primary bg-primary/8 border border-primary/12 px-3 py-1.5 rounded-full">
-                <Package className="w-3 h-3" /> {product.category}
+                <Package className="w-3 h-3" /> {product.category === 'Vegetables'
+                ? t('common.vegetables')
+                : product.category}
               </span>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-dark/50 bg-black/5 px-3 py-1.5 rounded-full">
-                <BadgeCheck className="w-3 h-3" /> Premium Quality
+                <BadgeCheck className="w-3 h-3" /> {t('shop.productDetail.premiumQuality')}
               </span>
             </div>
 
             <h1 className="font-serif-display text-3xl sm:text-4xl font-bold text-dark tracking-tight leading-tight">
-              {product.name}
+            {productName}
             </h1>
 
             {/* Rating */}
@@ -297,7 +319,7 @@ const discount = currentOriginalPrice
                 ))}
               </div>
               <span className="text-sm font-bold text-dark/60">{product.rating}</span>
-              <span className="text-sm text-dark/35">({product.reviews} reviews)</span>
+              <span className="text-sm text-dark/35">({product.reviews} {t('shop.productDetail.reviews')})</span>
             </div>
 
             <p className="mt-4 text-[15px] text-dark/50 leading-relaxed font-light">{product.description}</p>
@@ -314,7 +336,7 @@ const discount = currentOriginalPrice
       </span>
 
       <span className="text-sm font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/50 px-3 py-1 rounded-full mb-1">
-        Save ₹{currentOriginalPrice - currentPrice}
+      {t('shop.productDetail.save')} ₹{currentOriginalPrice - currentPrice}
       </span>
     </>
   )}
@@ -324,7 +346,11 @@ const discount = currentOriginalPrice
             <div className="mt-3 flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${product.stock > 30 ? 'bg-emerald-500' : product.stock > 10 ? 'bg-amber-500' : 'bg-red-500'}`} />
               <span className="text-sm font-medium text-dark/50">
-                {product.stock > 30 ? 'In Stock — Ready to deliver' : product.stock > 10 ? `Only ${product.stock} left` : 'Low stock'}
+              {product.stock > 30
+              ? t('shop.productDetail.inStockReady')
+              : product.stock > 10
+              ? t('shop.productDetail.onlyLeft').replace('{count}', product.stock)
+              : t('shop.productDetail.lowStock')}
               </span>
             </div>
 
@@ -334,7 +360,9 @@ const discount = currentOriginalPrice
             {/* Weight selector */}
 {(product.variants?.length > 0 || product.weightOptions?.length > 0) && (
   <div className="mb-6">
-    <span className="text-sm font-bold text-dark mb-3 block">Select Weight</span>
+    <span className="text-sm font-bold text-dark mb-3 block">
+      {t('shop.productDetail.selectWeight')}
+    </span>
     <div className="flex flex-wrap gap-2">
       {(product.variants?.length > 0
         ? product.variants.map((variant) => variant.weight)
@@ -394,11 +422,11 @@ const discount = currentOriginalPrice
                 <AnimatePresence mode="wait">
                   {added ? (
                     <motion.span key="added" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
-                      <Check className="w-5 h-5" strokeWidth={3} /> Added!
+                      <Check className="w-5 h-5" strokeWidth={3} /> {t('shop.productDetail.added')}
                     </motion.span>
                   ) : (
                     <motion.span key="add" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
-                      <ShoppingCart className="w-5 h-5" /> Add to Cart
+                      <ShoppingCart className="w-5 h-5" /> {t('shop.productDetail.addToCart')}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -406,7 +434,7 @@ const discount = currentOriginalPrice
 
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={() => { if (!liked) addToast('Added to wishlist', 'info'); toggleWishlist(product) }}
+                onClick={() => { if (!liked) addToast(t('shop.productDetail.addedToWishlist'), 'info'); toggleWishlist(product) }}
                 className={`w-13 h-13 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 ${
                   liked ? 'bg-red-50 border-red-200 text-red-500 shadow-lg shadow-red-500/15' : 'border-black/8 text-dark/35 hover:border-red-200 hover:text-red-500'
                 }`}
@@ -422,8 +450,8 @@ const discount = currentOriginalPrice
                   <Truck className="w-5.5 h-5.5" />
                 </span>
                 <div>
-                  <p className="text-sm font-bold text-dark">Estimated delivery: 40 minutes</p>
-                  <p className="text-xs text-dark/40 mt-0.5">Within 5 KM radius • Free delivery on orders above ₹200</p>
+                  <p className="text-sm font-bold text-dark">{t('shop.productDetail.estimatedDelivery')}</p>
+                  <p className="text-xs text-dark/40 mt-0.5">{t('shop.productDetail.deliveryRadius')} • {t('shop.productDetail.freeDeliveryAbove')}</p>
                 </div>
               </div>
             </div>
@@ -431,9 +459,24 @@ const discount = currentOriginalPrice
             {/* Trust badges */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { icon: ShieldCheck, label: 'Quality\nGuaranteed', color: 'text-primary', bg: 'bg-primary/8' },
-                { icon: MapPin, label: 'Local\nSourced', color: 'text-secondary', bg: 'bg-secondary/8' },
-                { icon: Thermometer, label: 'Cold\nChain', color: 'text-primary-dark', bg: 'bg-primary/8' },
+                {
+                  icon: ShieldCheck,
+                  label: t('shop.productDetail.qualityGuaranteed'),
+                  color: 'text-primary',
+                  bg: 'bg-primary/8',
+                },
+                {
+                  icon: MapPin,
+                  label: t('shop.productDetail.localSourced'),
+                  color: 'text-secondary',
+                  bg: 'bg-secondary/8',
+                },
+                {
+                  icon: Thermometer,
+                  label: t('shop.productDetail.coldChain'),
+                  color: 'text-primary-dark',
+                  bg: 'bg-primary/8',
+                },
               ].map((b) => (
                 <div key={b.label} className="flex flex-col items-center gap-2 p-3.5 rounded-2xl bg-white border border-black/5">
                   <span className={`w-10 h-10 rounded-xl ${b.bg} flex items-center justify-center ${b.color}`}>
@@ -520,11 +563,10 @@ const discount = currentOriginalPrice
                     <MapPin className="w-7 h-7" />
                   </span>
                   <div>
-                    <h4 className="text-lg font-bold text-dark mb-2">Sourced from {product.origin}</h4>
+                    <h4 className="text-lg font-bold text-dark mb-2">{t('shop.productDetail.sourcedFrom').replace('{origin}', product.origin)}</h4>
                     <p className="text-[14px] text-dark/50 leading-relaxed font-light">
-                      We partner directly with trusted local farms to ensure every vegetable reaches you at peak freshness.
-                      No middlemen, no cold storage — just straight from the field to your kitchen. Our sourcing standards ensure
-                      you receive the freshest produce within hours of harvest.
+                    {t('shop.productDetail.originDescription1')}
+                    {t('shop.productDetail.originDescription2')}
                     </p>
                   </div>
                 </div>
@@ -536,11 +578,11 @@ const discount = currentOriginalPrice
                     <Thermometer className="w-7 h-7" />
                   </span>
                   <div>
-                    <h4 className="text-lg font-bold text-dark mb-2">Storage Instructions</h4>
+                    <h4 className="text-lg font-bold text-dark mb-2">{t('shop.productDetail.storageInstructions')}</h4>
                     <p className="text-[14px] text-dark/50 leading-relaxed font-light">{product.storage}</p>
                     <div className="mt-4 flex items-center gap-3">
                       <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/8 border border-primary/12 px-3 py-1.5 rounded-full">
-                        <Clock className="w-3 h-3" /> Best consumed within 3-5 days
+                      <Clock className="w-3 h-3" /> {t('shop.productDetail.bestConsumed')}
                       </span>
                     </div>
                   </div>
@@ -550,7 +592,7 @@ const discount = currentOriginalPrice
               {activeTab === 'reviews' && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <h4 className="text-lg font-bold text-dark">Customer Reviews</h4>
+                    <h4 className="text-lg font-bold text-dark">{t('shop.productDetail.customerReviews')}</h4>
                     <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cream">
                       <Star className="w-4 h-4 text-accent fill-accent" />
                       <span className="text-base font-bold text-dark">{product.rating}</span>
@@ -580,9 +622,9 @@ const discount = currentOriginalPrice
 ) : (
   <div className="py-12 text-center rounded-2xl bg-white border border-black/5">
     <ThumbsUp className="w-8 h-8 mx-auto mb-3 text-dark/20" />
-    <p className="text-sm font-semibold text-dark/60">No reviews yet</p>
+    <p className="text-sm font-semibold text-dark/60">{t('shop.productDetail.noReviews')}</p>
     <p className="text-xs text-dark/35 mt-1">
-      Be the first to review this product.
+    {t('shop.productDetail.firstReview')}
     </p>
   </div>
 )}
@@ -603,7 +645,10 @@ const discount = currentOriginalPrice
             className="mb-20"
           >
             <h2 className="font-serif-display text-2xl sm:text-3xl font-bold text-dark mb-8">
-              Frequently Bought <span className="text-gradient">Together</span>
+            {t('shop.productDetail.frequentlyBought')}{' '}
+<span className="text-gradient">
+  {t('shop.productDetail.together')}
+</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {boughtTogether.map((p, i) => (
@@ -624,10 +669,10 @@ const discount = currentOriginalPrice
           >
             <div className="flex items-center justify-between mb-8">
               <h2 className="font-serif-display text-2xl sm:text-3xl font-bold text-dark">
-                Related <span className="text-gradient">Products</span>
+              {t('shop.productDetail.relatedProducts')}
               </h2>
               <Link to="/vegetables" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dark transition-colors">
-                View All <ChevronRight className="w-4 h-4" />
+              {t('shop.productDetail.viewAll')} <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
