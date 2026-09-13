@@ -211,7 +211,7 @@ function DeliveryOptions({ t }) {
             <span className="block text-xs font-bold text-dark mt-1">{s.label}</span>
             <span className="block text-[10px] text-dark/40">{s.time}</span>
             <span className={`block text-[11px] font-bold mt-1 ${s.price > 0 ? 'text-accent' : 'text-primary'}`}>
-            {s.price > 0 ? `â‚¹${s.price}` : t('cart.free')}
+            {s.price > 0 ? `₹${s.price}` : t('cart.free')}
             </span>
           </button>
         ))}

@@ -11,6 +11,8 @@ import { getErrorMessage } from '../api/client'
 import { useCart, useToast, deliverySlots } from '../context/CartContext'
 import { useProducts } from '../context/ProductsContext'
 import Footer from '../components/Footer'
+import { useSettings } from '../context/AuthContext'
+import { getTranslation } from '../i18n'
 
 const steps = [
   { id: 1, label: 'Address', icon: MapPin },
@@ -21,6 +23,10 @@ const steps = [
 
 /* ========== PROGRESS BAR ========== */
 function ProgressBar({ current }) {
+  const { settings } = useSettings()
+  const language = settings.language || 'en'
+  const t = (key) => getTranslation(language, key)
+
   return (
     <div className="flex items-center gap-0 mb-10">
       {steps.map((step, i) => (
@@ -34,7 +40,7 @@ function ProgressBar({ current }) {
             >
               {current > step.id ? <Check className="w-5 h-5" /> : <step.icon className="w-4.5 h-4.5" />}
             </motion.div>
-            <span className={`text-[11px] font-semibold mt-1.5 ${current >= step.id ? 'text-dark' : 'text-dark/35'}`}>{step.label}</span>
+            <span className={`text-[11px] font-semibold mt-1.5 ${current >= step.id ? 'text-dark' : 'text-dark/35'}`}>{t(`checkout.${step.label.toLowerCase()}`)}</span>
           </div>
           {i < steps.length - 1 && (
             <div className="flex-1 h-0.5 mx-2 mb-5 rounded-full overflow-hidden bg-black/8">
@@ -55,6 +61,9 @@ function ProgressBar({ current }) {
 /* ========== ADDRESS FORM ========== */
 function AddressForm({ address, onSave, onCancel }) {
   const [form, setForm] = useState(address || { type: 'home', name: '', phone: '', house: '', street: '', area: '', city: '', pincode: '', landmark: '' })
+  const { settings } = useSettings()
+  const language = settings.language || 'en'
+  const translate = (key) => getTranslation(language, key)
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
 
   const inputClass = "w-full h-11 px-4 rounded-xl bg-cream border border-black/8 text-sm text-dark placeholder:text-dark/30 focus:outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all"
@@ -62,13 +71,21 @@ function AddressForm({ address, onSave, onCancel }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="p-5 rounded-2xl bg-white border border-black/5">
       <div className="flex items-center justify-between mb-5">
-        <h4 className="text-sm font-bold text-dark">{address ? 'Edit Address' : 'Add New Address'}</h4>
+      <h4 className="text-sm font-bold text-dark">
+  {address
+    ? translate('checkout.editAddress')
+    : translate('checkout.addNewAddress')}
+</h4>
         <button onClick={onCancel} className="text-xs text-dark/40 hover:text-dark">Cancel</button>
       </div>
 
       {/* Type */}
       <div className="flex gap-2 mb-4">
-        {[{ id: 'home', icon: Home, label: 'Home' }, { id: 'office', icon: Building2, label: 'Office' }, { id: 'other', icon: MapPin, label: 'Other' }].map((t) => (
+        {[
+  { id: 'home', icon: Home, label: translate('checkout.home') },
+  { id: 'office', icon: Building2, label: translate('checkout.office') },
+  { id: 'other', icon: MapPin, label: translate('checkout.other') },
+].map((t) => (
           <button key={t.id} onClick={() => set('type', t.id)} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border transition-all ${
             form.type === t.id ? 'bg-dark text-white border-dark' : 'bg-cream text-dark/55 border-black/8 hover:border-dark/25'
           }`}>
@@ -78,18 +95,18 @@ function AddressForm({ address, onSave, onCancel }) {
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <input className={inputClass} placeholder="Full Name" value={form.name} onChange={(e) => set('name', e.target.value)} />
-        <input className={inputClass} placeholder="Phone Number" value={form.phone} onChange={(e) => set('phone', e.target.value)} />
-        <input className={inputClass} placeholder="House / Flat No." value={form.house} onChange={(e) => set('house', e.target.value)} />
-        <input className={inputClass} placeholder="Street / Road" value={form.street} onChange={(e) => set('street', e.target.value)} />
-        <input className={inputClass} placeholder="Area / Locality" value={form.area} onChange={(e) => set('area', e.target.value)} />
-        <input className={inputClass} placeholder="City" value={form.city} onChange={(e) => set('city', e.target.value)} />
-        <input className={inputClass} placeholder="Pincode" value={form.pincode} onChange={(e) => set('pincode', e.target.value)} />
-        <input className={inputClass} placeholder="Landmark (optional)" value={form.landmark} onChange={(e) => set('landmark', e.target.value)} />
+        <input className={inputClass} placeholder={translate('checkout.fullName')} value={form.name} onChange={(e) => set('name', e.target.value)} />
+        <input className={inputClass} placeholder={translate('checkout.phoneNumber')} value={form.phone} onChange={(e) => set('phone', e.target.value)} />
+        <input className={inputClass} placeholder={translate('checkout.houseFlat')} value={form.house} onChange={(e) => set('house', e.target.value)} />
+        <input className={inputClass} placeholder={translate('checkout.streetRoad')} value={form.street} onChange={(e) => set('street', e.target.value)} />
+        <input className={inputClass} placeholder={translate('checkout.areaLocality')} value={form.area} onChange={(e) => set('area', e.target.value)} />
+        <input className={inputClass} placeholder={translate('checkout.city')} value={form.city} onChange={(e) => set('city', e.target.value)} />
+        <input className={inputClass} placeholder={translate('checkout.pincode')} value={form.pincode} onChange={(e) => set('pincode', e.target.value)} />
+        <input className={inputClass} placeholder={translate('checkout.landmarkOptional')} value={form.landmark} onChange={(e) => set('landmark', e.target.value)} />
       </div>
 
       <motion.button whileTap={{ scale: 0.97 }} onClick={() => onSave(form)} className="mt-4 w-full h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
-        Save Address
+      {translate('checkout.saveAddress')}
       </motion.button>
     </motion.div>
   )
@@ -97,6 +114,9 @@ function AddressForm({ address, onSave, onCancel }) {
 
 /* ========== STEP 1: ADDRESS ========== */
 function AddressStep() {
+  const { settings } = useSettings()
+  const language = settings.language || 'en'
+  const translate = (key) => getTranslation(language, key)
   const { addresses, defaultAddressId, saveAddress, deleteAddress, setDefaultAddress } = useCart()
   const { addToast } = useToast()
   const [showForm, setShowForm] = useState(false)
@@ -104,7 +124,7 @@ function AddressStep() {
 
   const handleSave = (form) => {
     saveAddress(form)
-    addToast('Address saved', 'success')
+    addToast(translate('checkout.addressSaved'), 'success')
     setShowForm(false)
     setEditing(null)
   }
@@ -112,7 +132,9 @@ function AddressStep() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-bold text-dark">Delivery Address</h3>
+      <h3 className="text-lg font-bold text-dark">
+  {translate('checkout.deliveryAddress')}
+</h3>
         <button onClick={() => { setShowForm(true); setEditing(null) }} className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dark transition-colors">
           <Plus className="w-4 h-4" /> Add New
         </button>
@@ -126,7 +148,9 @@ function AddressStep() {
       {addresses.length === 0 && !showForm && (
         <div className="text-center py-12">
           <MapPin className="w-12 h-12 text-dark/15 mx-auto mb-3" />
-          <p className="text-sm text-dark/45">No saved addresses. Add one to continue.</p>
+          <p className="text-sm text-dark/45">
+  {translate('checkout.noSavedAddresses')}
+</p>
         </div>
       )}
 
@@ -146,7 +170,9 @@ function AddressStep() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-dark">{addr.name}</span>
                     <span className="text-[10px] font-bold uppercase tracking-wide text-primary bg-primary/8 px-2 py-0.5 rounded-full">{addr.type}</span>
-                    {defaultAddressId === addr.id && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Default</span>}
+                    {defaultAddressId === addr.id && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+  {translate('checkout.default')}
+</span>}
                   </div>
                   <p className="text-xs text-dark/50 mt-1 leading-relaxed">
                     {addr.house}, {addr.street}, {addr.area}, {addr.city} - {addr.pincode}
@@ -159,7 +185,7 @@ function AddressStep() {
                 <button onClick={(e) => { e.stopPropagation(); setEditing(addr) }} className="w-8 h-8 rounded-lg flex items-center justify-center text-dark/30 hover:text-primary hover:bg-primary/10 transition-colors">
                   <Edit3 className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); deleteAddress(addr.id); addToast('Address deleted', 'info') }} className="w-8 h-8 rounded-lg flex items-center justify-center text-dark/30 hover:text-red-500 hover:bg-red-50 transition-colors">
+                <button onClick={(e) => { e.stopPropagation(); deleteAddress(addr.id); addToast(translate('checkout.addressDeleted'), 'info') }} className="w-8 h-8 rounded-lg flex items-center justify-center text-dark/30 hover:text-red-500 hover:bg-red-50 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -174,28 +200,61 @@ function AddressStep() {
 /* ========== STEP 2: DELIVERY SLOT ========== */
 function SlotStep() {
   const { selectedSlot, setSelectedSlot } = useCart()
+  const { settings } = useSettings()
+  const language = settings.language || 'en'
+  const translate = (key) => getTranslation(language, key)
   const today = new Date()
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
 
   const slotGroups = [
     {
-      title: 'Today',
-      slots: [{ id: 'express', icon: '⚡', label: 'Express Delivery', time: '40 minutes', price: 30, desc: 'Get it delivered in 40 minutes' }],
+      title: translate('checkout.today'),
+      slots: [{
+        id: 'express',
+        icon: '⚡',
+        label: translate('checkout.expressDelivery'),
+        time: translate('checkout.fortyMinutes'),
+        price: 30,
+        desc: translate('checkout.expressDescription')
+      }],
     },
     {
-      title: tomorrow.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' }),
+      title: tomorrow.toLocaleDateString(language === 'ta' ? 'ta-IN' : 'en-IN', { weekday: 'long', month: 'short', day: 'numeric' }),
       slots: [
-        { id: 'morning', icon: '🌅', label: 'Morning', time: '8:00 AM — 11:00 AM', price: 0, desc: 'Start your day fresh' },
-        { id: 'afternoon', icon: '☀️', label: 'Afternoon', time: '12:00 PM — 3:00 PM', price: 0, desc: 'Midday delivery' },
-        { id: 'evening', icon: '🌆', label: 'Evening', time: '5:00 PM — 8:00 PM', price: 0, desc: 'End your day right' },
+        {
+          id: 'morning',
+          icon: '🌅',
+          label: translate('checkout.morning'),
+          time: translate('checkout.morningTime'),
+          price: 0,
+          desc: translate('checkout.morningDescription')
+        },
+        {
+          id: 'afternoon',
+          icon: '☀️',
+          label: translate('checkout.afternoon'),
+          time: translate('checkout.afternoonTime'),
+          price: 0,
+          desc: translate('checkout.afternoonDescription')
+        },
+        {
+          id: 'evening',
+          icon: '🌆',
+          label: translate('checkout.evening'),
+          time: translate('checkout.eveningTime'),
+          price: 0,
+          desc: translate('checkout.eveningDescription')
+        },
       ],
     },
   ]
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-bold text-dark">Choose Delivery Slot</h3>
+      <h3 className="text-lg font-bold text-dark">
+  {translate('checkout.chooseDeliverySlot')}
+</h3>
       {slotGroups.map((group) => (
         <div key={group.title}>
           <h4 className="text-xs font-bold uppercase tracking-wider text-dark/40 mb-3">{group.title}</h4>
@@ -216,7 +275,7 @@ function SlotStep() {
                   <span className="text-[11px] text-dark/35 block mt-0.5">{s.desc}</span>
                 </div>
                 <div className="text-right">
-                  <span className={`text-sm font-bold ${s.price > 0 ? 'text-accent' : 'text-primary'}`}>{s.price > 0 ? `₹${s.price}` : 'Free'}</span>
+                  <span className={`text-sm font-bold ${s.price > 0 ? 'text-accent' : 'text-primary'}`}>{s.price > 0 ? `₹${s.price}` : translate('checkout.free')}</span>
                   {selectedSlot?.id === s.id && (
                     <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="block w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center mt-1 ml-auto">
                       <Check className="w-3 h-3" />
@@ -235,6 +294,9 @@ function SlotStep() {
 /* ========== STEP 3: ORDER REVIEW ========== */
 function ReviewStep() {
   const { cartItems, subtotal, couponDiscount, deliveryFee, packagingFee, grandTotal, appliedCoupon, selectedSlot, defaultAddress } = useCart()
+  const { settings } = useSettings()
+  const language = settings.language || 'en'
+  const translate = (key) => getTranslation(language, key)
 
   return (
     <div className="space-y-6">
@@ -250,7 +312,7 @@ function ReviewStep() {
                 <span className="text-xl">{product.emoji}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-semibold text-dark block truncate">{product.name}</span>
+                <span className="text-sm font-semibold text-dark block truncate">{translate(`shop.productNames.${product.name}`) || product.name}</span>
                 <span className="text-[11px] text-dark/40">{weight} × {qty}</span>
               </div>
               <span className="text-sm font-bold text-dark">₹{product.price * qty}</span>
@@ -276,12 +338,20 @@ function ReviewStep() {
 
       {/* Price breakdown */}
       <div className="p-5 rounded-2xl bg-white border border-black/5 space-y-2.5 text-sm">
-        <div className="flex justify-between"><span className="text-dark/55">Subtotal</span><span className="font-semibold">₹{subtotal}</span></div>
+        <div className="flex justify-between"><span className="text-dark/55">
+  {translate('checkout.subtotal')}
+</span><span className="font-semibold">₹{subtotal}</span></div>
         {couponDiscount > 0 && <div className="flex justify-between text-emerald-600"><span>Coupon ({appliedCoupon?.code})</span><span className="font-bold">-₹{couponDiscount}</span></div>}
-        <div className="flex justify-between"><span className="text-dark/55">Delivery</span><span className={`font-semibold ${deliveryFee === 0 ? 'text-primary' : ''}`}>{deliveryFee === 0 ? 'Free' : `₹${deliveryFee}`}</span></div>
-        <div className="flex justify-between"><span className="text-dark/55">Packaging</span><span className="font-semibold">₹{packagingFee}</span></div>
+        <div className="flex justify-between"><span className="text-dark/55">
+  {translate('checkout.delivery')}
+</span><span className={`font-semibold ${deliveryFee === 0 ? 'text-primary' : ''}`}>{deliveryFee === 0 ? 'Free' : `₹${deliveryFee}`}</span></div>
+        <div className="flex justify-between"><span className="text-dark/55">
+  {translate('checkout.packaging')}
+</span><span className="font-semibold">₹{packagingFee}</span></div>
         <div className="h-px bg-black/8 my-1" />
-        <div className="flex justify-between"><span className="text-base font-bold">Total</span><span className="text-xl font-black">₹{grandTotal}</span></div>
+        <div className="flex justify-between"><span className="text-base font-bold">
+  {translate('checkout.total')}
+</span><span className="text-xl font-black">₹{grandTotal}</span></div>
       </div>
     </div>
   )

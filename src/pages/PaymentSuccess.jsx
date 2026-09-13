@@ -6,6 +6,8 @@ import { useToast } from '../context/CartContext'
 import PaymentStatusBadge from '../components/ui/PaymentStatusBadge'
 import { orderApi } from '../api'
 import Footer from '../components/Footer'
+import { useSettings } from '../context/AuthContext'
+import { getTranslation } from '../i18n'
 
 /* ---------- Confetti particle ---------- */
 function Confetti() {
@@ -43,6 +45,9 @@ function Confetti() {
 }
 
 export default function PaymentSuccess() {
+  const { settings } = useSettings()
+  const language = settings.language || 'en'
+  const translate = (key) => getTranslation(language, key)
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const { addToast } = useToast()
@@ -157,16 +162,15 @@ export default function PaymentSuccess() {
           transition={{ delay: 0.4 }}
           className="font-serif-display text-3xl sm:text-4xl font-bold text-dark tracking-tight"
         >
-          Order Placed! 🎉
+          {translate('paymentSuccess.title')} 🎉
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.55 }}
-          className="mt-3 text-dark/50 text-[15px] font-light"
-        >
-          Thank you for your order. We're preparing it with care.
+          className="mt-3 text-dark/50 text-[15px] font-light">
+          {translate('paymentSuccess.thankYou')}
         </motion.p>
 
         {/* Order ID */}
@@ -176,7 +180,7 @@ export default function PaymentSuccess() {
           transition={{ delay: 0.7 }}
           className="mt-8 p-5 rounded-2xl bg-white border border-black/5 shadow-soft"
         >
-          <span className="text-[11px] font-bold uppercase tracking-wider text-dark/40">Order ID</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-dark/40">{translate('paymentSuccess.orderId')}</span>
           <div className="flex items-center justify-center gap-2 mt-1.5">
             <span className="text-xl font-black text-dark tracking-wider">{order.id}</span>
             <button onClick={copyId} className="w-8 h-8 rounded-lg flex items-center justify-center text-dark/30 hover:text-primary hover:bg-primary/10 transition-colors">
@@ -194,7 +198,10 @@ export default function PaymentSuccess() {
         >
           <div className="flex items-center gap-3 text-sm">
             <Package className="w-5 h-5 text-primary shrink-0" />
-            <span className="text-dark/60">{order.items.length} item{order.items.length > 1 ? 's' : ''}</span>
+            <span className="text-dark/60">{order.items?.length || 0}{' '}
+{(order.items?.length || 0) === 1
+  ? translate('paymentSuccess.item')
+  : translate('paymentSuccess.items')}</span>
             <span className="ml-auto font-bold text-dark">₹{order.grandTotal}</span>
           </div>
           {order.slot && (
@@ -255,7 +262,7 @@ export default function PaymentSuccess() {
           <div className="flex items-center justify-center gap-3">
             <Truck className="w-6 h-6 text-primary" />
             <div className="text-left">
-              <p className="text-sm font-bold text-dark">Estimated Arrival</p>
+              <p className="text-sm font-bold text-dark">{translate('paymentSuccess.estimatedArrival')}</p>
               <p className="text-xs text-dark/50">{order.slot?.time || '40 minutes'}</p>
             </div>
           </div>
@@ -268,11 +275,11 @@ export default function PaymentSuccess() {
           transition={{ delay: 1.15 }}
           className="mt-8 flex flex-col sm:flex-row gap-3"
         >
-          <Link to="/" className="flex-1 h-13 rounded-2xl border-2 border-black/10 text-sm font-bold text-dark/70 flex items-center justify-center gap-2 hover:border-dark/25 transition-all">
-            <Home className="w-4 h-4" /> Continue Shopping
+          <Link to="/" className="flex-1 h-13 rounded-2xl border-2 border-black/10 text-sm font-bold text-dark/70 flex items-center justify-center gap-2 hover:border-dark/25 transition-all  whitespace-nowrap">
+          <Home className="w-4 h-4" /> {translate('paymentSuccess.continueShopping')}
           </Link>
-          <Link to="/orders" className="flex-1 h-13 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-  <ShoppingBag className="w-4 h-4" /> Track Order
+          <Link to="/orders" className="flex-1 h-13 rounded-2xl bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/15 hover:shadow-xl hover:-translate-y-0.5 transition-all  whitespace-nowrap">
+          <ShoppingBag className="w-4 h-4" /> {translate('paymentSuccess.trackOrder')}
 </Link>
         </motion.div>
       </div>
