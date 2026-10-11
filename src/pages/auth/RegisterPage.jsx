@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { User, Mail, Smartphone, ArrowRight } from 'lucide-react'
 import AuthShell from '../../components/auth/AuthShell'
@@ -15,6 +15,8 @@ export default function RegisterPage() {
   const { stageRegistration, sendOtp } = useAuth()
   const { addToast } = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from || '/'
 
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '' })
   const [accepted, setAccepted] = useState(false)
@@ -48,7 +50,13 @@ export default function RegisterPage() {
       sendOtp(`+91 ${form.phone}`, 'register')
       addToast('Account created! Verify your mobile to activate it', 'success', 3500)
       setBusy(false)
-      navigate('/verify-otp', { state: { identifier: `+91 ${form.phone}`, purpose: 'register' } })
+      navigate('/verify-otp', {
+        state: {
+          identifier: `+91 ${form.phone}`,
+          purpose: 'register',
+          from,
+        },
+      })
     }, 1400)
   }
 

@@ -111,7 +111,7 @@ export function CartProvider({ children }) {
   const [items, dispatch] = useReducer(cartReducer, {})
   const [previewOpen, setPreviewOpen] = useState(false)
   const [appliedCoupon, setAppliedCoupon] = useState(null)
-  const [selectedSlot, setSelectedSlot] = useState(deliverySlots[0])
+  const [selectedSlot, setSelectedSlot] = useState(null)
   /* Authenticated users keep addresses in MongoDB (loaded by the effect
      below); localStorage is only used for guest checkout. */
   const [addresses, setAddresses] = useState(() => {

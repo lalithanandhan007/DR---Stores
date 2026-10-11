@@ -11,7 +11,7 @@ import { getErrorMessage } from '../api/client'
 import { useCart, useToast, deliverySlots } from '../context/CartContext'
 import { useProducts } from '../context/ProductsContext'
 import Footer from '../components/Footer'
-import { useSettings } from '../context/AuthContext'
+import { useSettings, useAuth } from '../context/AuthContext'
 import { getTranslation } from '../i18n'
 
 const steps = [
@@ -359,11 +359,15 @@ function ReviewStep() {
 
 /* ========== STEP 4: PAYMENT ========== */
 function PaymentStep() {
-  const [selected, setSelected] = useState('gpay')
+  const [selected, setSelected] = useState(() => {
+    const saved = sessionStorage.getItem('dr-checkout-payment-method')
+    return saved || 'gpay'
+  })
   const { placeOrder, clearCart, cartItems, grandTotal, deliveryFee, packagingFee, appliedCoupon, selectedSlot, defaultAddress } = useCart()
   const { productById } = useProducts()
   const { addToast } = useToast()
   const navigate = useNavigate()
+  const { isAuthenticated, authLoading } = useAuth()
   const [placing, setPlacing] = useState(false)
   const [creatingOrder, setCreatingOrder] = useState(false)
   const failureHandled = useRef(false)
@@ -388,6 +392,22 @@ function PaymentStep() {
   }
 
   const handlePay = async () => {
+    if (authLoading) return
+
+    if (!isAuthenticated) {
+      sessionStorage.setItem('dr-checkout-resume', 'payment')
+      sessionStorage.setItem('dr-checkout-payment-method', selected)
+
+      navigate('/login', {
+        state: {
+          from: '/checkout',
+          checkoutStep: 4,
+          paymentMethod: selected,
+        },
+      })
+      return
+    }
+
     setPlacing(true)
     failureHandled.current = false
 
@@ -564,6 +584,7 @@ function PaymentStep() {
 
 /* ========== CHECKOUT PAGE ========== */
 export default function CheckoutPage() {
+  const { isAuthenticated, authLoading } = useAuth()
   const [step, setStep] = useState(1)
   const { cartItems, defaultAddress, selectedSlot } = useCart()
 

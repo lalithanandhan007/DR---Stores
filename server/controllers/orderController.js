@@ -7,6 +7,7 @@ import Coupon from '../models/Coupon.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import asyncHandler from '../utils/asyncHandler.js';
+import { generateOrderId } from '../utils/generateOrderId.js';
 
 export const placeOrder = asyncHandler(async (req, res) => {
   const { items, coupon, deliveryFee, packagingFee, address, slot, paymentMethod, special } = req.body;
@@ -69,7 +70,7 @@ export const placeOrder = asyncHandler(async (req, res) => {
   const finalPackagingFee = Number(packagingFee) || 5;
   const grandTotal = Math.max(0, subtotal - discount + finalDeliveryFee + finalPackagingFee);
 
-  const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
+  const orderId = await generateOrderId();
   const order = await Order.create({
     _id: orderId,
     customer: { _id: req.user._id, name: req.user.name, phone: req.user.phone, email: req.user.email, avatar: req.user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) },

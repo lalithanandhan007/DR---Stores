@@ -74,7 +74,7 @@ export default function VerifyOtpPage() {
           return
         }
       }
-      navigate('/profile', { replace: true })
+      navigate(dest(null), { replace: true })
     } else if (purpose === 'reset') {
       navigate('/reset-password', { replace: true, state: { identifier } })
     } else {
