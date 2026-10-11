@@ -617,7 +617,7 @@ const discount = currentOriginalPrice
         : '',
       helpful: review.helpful ?? 0,
       avatar: review.user?.avatar || '👤',
-    }} index={i} />
+    }} index={i} t={t} />
   ))
 ) : (
   <div className="py-12 text-center rounded-2xl bg-white border border-black/5">

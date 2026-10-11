@@ -108,7 +108,7 @@ function Step2({ form, set }) {
         <label className={labelClass}>Add Weight / Quantity *</label>
 
         <div className="flex flex-wrap gap-2 mt-1">
-          {['250g', '500g', '1kg', '2kg', '250ml', '500ml', '1L', '1 piece'].map((w) => {
+          {['250g', '500g', '750g', '1kg'].map((w) => {
             const active = form.variants?.some(
               (variant) => variant.weight === w
             )
@@ -137,17 +137,7 @@ function Step2({ form, set }) {
           })}
         </div>
 
-        <input
-          className={`${inputClass} mt-3`}
-          placeholder="Custom weight (e.g. 750g)"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              addVariant(e.target.value)
-              e.target.value = ''
-            }
-          }}
-        />
+        
       </div>
 
       {form.variants?.length > 0 && (

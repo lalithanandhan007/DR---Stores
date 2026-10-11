@@ -20,6 +20,7 @@ export const toShopProduct = (p) => ({
   mrp: p.mrp ?? p.originalPrice ?? 0,
   category: p.categoryName || p.category || 'Uncategorized',
   reviews: p.reviewCount ?? p.reviews ?? 0,
+  weightOptions: (p.variants || []).map((variant) => variant.weight),
 })
 
 export const toAdminProduct = (p) => ({

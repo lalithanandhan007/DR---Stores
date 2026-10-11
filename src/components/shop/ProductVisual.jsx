@@ -62,7 +62,7 @@ export default function ProductVisual({ product, size = 'card', isHovered = fals
   const h = isLarge ? 600 : 340
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden bg-white dark:bg-[#1c1c1c]">
       {/* SVG background layer */}
       <svg viewBox={`0 0 ${w} ${h}`} className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
         <defs>
